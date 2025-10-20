@@ -4,8 +4,43 @@ const Database = require("better-sqlite3");
 const { spawn } = require("child_process");
 const { app, BrowserWindow, ipcMain } = require("electron");
 
-// --- Database location ---
+// =============================================
+// Step 7.1 — Backend Query Layer for Verifier
+// =============================================
+
+// Path to the main database file
 const dbPath = path.join(__dirname, "data", "gittracker.db");
+
+// Fetch the most recent runs from the database
+function getRecentRuns(limit = 5) {
+	try {
+		const db = new Database(dbPath, { readonly: true });
+		const rows = db
+			.prepare(
+				`SELECT finished_at, status, duration_ms, scanned_repos, error_message
+				 FROM runs
+				 ORDER BY finished_at DESC
+				 LIMIT ?`
+			)
+			.all(limit);
+		db.close();
+		return rows;
+	} catch (err) {
+		console.error("❌ Failed to read runs table:", err.message);
+		return [];
+	}
+}
+
+// Temporary test (you can comment this out later)
+if (require.main === module) {
+	console.log("🧾 Recent runs from database:");
+	const runs = getRecentRuns(5);
+	console.log(runs.length ? runs : "No runs found.");
+	process.exit(0); // 👈 ensures Node stops after the test
+}
+
+// --- Database location ---
+// const dbPath = path.join(__dirname, "data", "gittracker.db");
 
 // --- Helper: check if today's data exists ---
 function checkTodayRecord() {
