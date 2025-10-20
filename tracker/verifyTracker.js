@@ -31,12 +31,62 @@ function getRecentRuns(limit = 5) {
 	}
 }
 
+// =============================================
+// Step 7.2 — Health Evaluation for Verifier
+// =============================================
+
+// Decide current health based on recent runs
+function evaluateHealth(runs) {
+	if (!runs || runs.length === 0) {
+		return {
+			color: "red",
+			message: "No tracker runs recorded yet.",
+		};
+	}
+
+	const latest = runs[0];
+	const lastTime = new Date(latest.finished_at);
+	const hoursAgo = (Date.now() - lastTime.getTime()) / (1000 * 60 * 60);
+
+	if (latest.status === "failed") {
+		return {
+			color: "red",
+			message: `❌ Last run FAILED (${
+				latest.error_message || "unknown error"
+			})`,
+		};
+	}
+
+	if (hoursAgo > 36) {
+		return {
+			color: "yellow",
+			message: `⚠️ No successful run in the past ${Math.floor(
+				hoursAgo
+			)} hours.`,
+		};
+	}
+
+	return {
+		color: "green",
+		message: `🟢 Last run successful — ${latest.scanned_repos} repos, ${
+			latest.duration_ms
+		} ms ago (${Math.round(hoursAgo)} h).`,
+		recent: runs,
+	};
+}
+
 // Temporary test (you can comment this out later)
 if (require.main === module) {
 	console.log("🧾 Recent runs from database:");
 	const runs = getRecentRuns(5);
 	console.log(runs.length ? runs : "No runs found.");
-	process.exit(0); // 👈 ensures Node stops after the test
+
+	// 👉 New Step 7.2 test
+	const health = evaluateHealth(runs);
+	console.log("\nHealth summary:");
+	console.log(health);
+
+	process.exit(0);
 }
 
 // --- Database location ---
