@@ -3,70 +3,76 @@
 
 <head>
     <meta charset="UTF-8" />
-    <title>Git-Tracker Verification</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Git-Tracker Verifier</title>
     <style>
         body {
-            font-family: "Segoe UI", sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f8f9fa;
-            color: #222;
-        }
-
-        .container {
-            text-align: center;
+            font-family: Arial, sans-serif;
+            background: #1e1e1e;
+            color: #eee;
             padding: 20px;
-            border-radius: 12px;
-            width: 80%;
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-            background-color: white;
         }
 
-        h1 {
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
             margin-bottom: 10px;
-            font-size: 22px;
         }
 
-        p {
-            font-size: 15px;
-            margin-bottom: 20px;
+        .indicator {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+        }
+
+        .indicator.green {
+            background: #4caf50;
+        }
+
+        .indicator.yellow {
+            background: #ffc107;
+        }
+
+        .indicator.red {
+            background: #f44336;
+        }
+
+        .recent-list {
+            margin-top: 10px;
+            padding-left: 0;
+            list-style: none;
+            font-size: 14px;
         }
 
         button {
+            margin-top: 15px;
+            padding: 6px 12px;
             border: none;
-            padding: 8px 18px;
-            margin: 0 8px;
-            border-radius: 6px;
-            font-size: 14px;
+            border-radius: 4px;
             cursor: pointer;
         }
 
-        .retry {
-            background-color: #ff9800;
-            color: white;
-        }
-
-        .close {
-            background-color: #555;
-            color: white;
-        }
-
-        .success {
-            background-color: #4caf50;
-            color: white;
+        .btn-row {
+            display: flex;
+            gap: 10px;
         }
     </style>
 </head>
 
 <body>
-    <div class="container" id="container">
-        <h1 id="title">Checking...</h1>
-        <p id="message">Please wait.</p>
-        <div id="buttons"></div>
+    <div class="status">
+        <div id="indicator" class="indicator red"></div>
+        <div id="statusText">Loading status …</div>
+    </div>
+
+    <h4>Recent Runs</h4>
+    <ul id="recentRuns" class="recent-list"></ul>
+
+    <div class="btn-row">
+        <button id="viewLogBtn">View Log</button>
+        <button id="retryBtn">Retry Now</button>
     </div>
 
     <script src="verifyWindow.js"></script>

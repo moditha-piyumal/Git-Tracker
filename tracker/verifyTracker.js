@@ -2,7 +2,10 @@
 const path = require("path");
 const Database = require("better-sqlite3");
 const { spawn } = require("child_process");
-const { app, BrowserWindow, ipcMain } = require("electron");
+const { app, BrowserWindow, ipcMain, shell } = require("electron");
+
+// const { ipcMain, shell } = require("electron");
+// const logDir = path.join(__dirname, "data", "logs");
 
 // =============================================
 // Step 7.1 — Backend Query Layer for Verifier
@@ -107,8 +110,8 @@ function checkTodayRecord() {
 // --- Electron window factory ---
 function createWindow(mode) {
 	const win = new BrowserWindow({
-		width: 420,
-		height: 250,
+		width: 750,
+		height: 650,
 		resizable: false,
 		title: "Git-Tracker Verification",
 		webPreferences: {
@@ -118,6 +121,11 @@ function createWindow(mode) {
 	});
 
 	win.loadFile(path.join(__dirname, "ui", "verifyWindow.html"));
+	const runs = getRecentRuns(5);
+	const health = evaluateHealth(runs);
+	win.webContents.on("did-finish-load", () => {
+		win.webContents.send("health-data", health);
+	});
 
 	// send mode to renderer once it’s ready
 	win.webContents.once("did-finish-load", () => {
@@ -145,4 +153,31 @@ app.whenReady().then(() => {
 
 app.on("window-all-closed", () => {
 	app.quit();
+});
+
+// ✅ Move these two require lines to the top of the file (if not already there)
+const fs = require("fs");
+// Combine shell with your existing Electron import (no need to redeclare ipcMain)
+// So at the top of the file, you should now have:
+/// const { app, BrowserWindow, ipcMain, shell } = require("electron");
+
+const logDir = path.join(__dirname, "data", "logs");
+ipcMain.on("open-log", () => {
+	try {
+		const today = new Date().toLocaleDateString("en-CA");
+		const logPath = path.join(logDir, `tracker-${today}.log`);
+		const { execFile } = require("child_process");
+
+		if (fs.existsSync(logPath)) {
+			// ✅ direct Notepad call
+			execFile("C:\\Windows\\System32\\notepad.exe", [logPath], (err) => {
+				if (err) console.error("❌ Failed to open Notepad:", err.message);
+				else console.log("🪶 Opened log in Notepad:", logPath);
+			});
+		} else {
+			console.log("⚠️  No log file for today:", logPath);
+		}
+	} catch (err) {
+		console.error("❌ Failed to open log:", err.message);
+	}
 });
