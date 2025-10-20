@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Git-Tracker Verification</title>
+    <style>
+        body {
+            font-family: "Segoe UI", sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f8f9fa;
+            color: #222;
+        }
+
+        .container {
+            text-align: center;
+            padding: 20px;
+            border-radius: 12px;
+            width: 80%;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            background-color: white;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+            font-size: 22px;
+        }
+
+        p {
+            font-size: 15px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            border: none;
+            padding: 8px 18px;
+            margin: 0 8px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .retry {
+            background-color: #ff9800;
+            color: white;
+        }
+
+        .close {
+            background-color: #555;
+            color: white;
+        }
+
+        .success {
+            background-color: #4caf50;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container" id="container">
+        <h1 id="title">Checking...</h1>
+        <p id="message">Please wait.</p>
+        <div id="buttons"></div>
+    </div>
+
+    <script src="verifyWindow.js"></script>
+</body>
+
+</html>
