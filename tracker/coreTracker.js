@@ -2,6 +2,10 @@
 const db = require("./db/index");
 const { execSync } = require("child_process");
 const path = require("path");
+// Step 6.2 – Lifecycle utilities
+const log = require("./utils/logger");
+const { acquireLock, releaseLock } = require("./utils/lock");
+const { dbExistsAndWritable, recentSuccess } = require("./utils/health");
 
 // STEP 0: Run the repo scanner automatically before tracking
 try {
@@ -106,49 +110,121 @@ function saveDailyTotals(date, totals) {
 	);
 }
 
+// Step 6.2 – Record run summary in 'runs' table
+function insertRun(
+	db,
+	status,
+	scanned_repos,
+	duration_ms,
+	error_message = null
+) {
+	try {
+		const stmt = db.prepare(`
+      INSERT INTO runs (started_at, finished_at, status, duration_ms, scanned_repos, error_message)
+      VALUES (datetime('now', 'localtime'), datetime('now', 'localtime'), ?, ?, ?, ?)
+    `);
+		stmt.run(status, duration_ms, scanned_repos, error_message);
+	} catch (err) {
+		log.error("Failed to insert run record: " + err.message);
+	}
+}
+
 // ===========================
 // STEP 3 - PART 7: MAIN RUN
 // ===========================
 function runTrackerForToday() {
-	// 1) Get all repos we should scan
-	const repos = getActiveRepos();
+	// Step 6.2 — Lifecycle: start, lock, and pre-flight checks
+	const start = Date.now();
+	log.section("Tracker Run Started");
 
-	// 2) Determine today's date in YYYY-MM-DD (local)
-	const today = new Date().toLocaleDateString("en-CA"); // e.g., 2025-10-22
-
-	// 3) Running totals across ALL repos for today
-	let totalAdded = 0;
-	let totalRemoved = 0;
-	let totalEdits = 0;
-	let totalCommits = 0;
-
-	// 4) Scan each repo and accumulate
-	for (const repo of repos) {
-		console.log(`📊 Scanning ${repo.name}...`);
-		const stats = getTodayStats(repo.path); // { added, removed, edits, commits }
-
-		// save per-repo row (idempotent via ON CONFLICT in saveDailyStats)
-		saveDailyStats(repo.id, today, stats);
-
-		// add to the grand totals
-		totalAdded += stats.added;
-		totalRemoved += stats.removed;
-		totalEdits += stats.edits;
-		totalCommits += stats.commits;
+	// 1️⃣ Acquire lock
+	const lock = acquireLock();
+	if (!lock.ok) {
+		log.error("Another tracker instance is active. Exiting.");
+		process.exit(1);
 	}
 
-	// 5) Save the grand totals (idempotent via ON CONFLICT in saveDailyTotals)
-	saveDailyTotals(today, {
-		added: totalAdded,
-		removed: totalRemoved,
-		edits: totalEdits,
-		commits: totalCommits,
-	});
+	// 2️⃣ Database check
+	const dbCheck = dbExistsAndWritable();
+	if (!dbCheck.ok) {
+		log.error("Database not found or not writable.");
+		releaseLock();
+		process.exit(1);
+	}
 
-	// 6) Friendly summary
-	console.log(
-		`\n🔥 Total for ${today}: +${totalAdded} / -${totalRemoved} (${totalEdits} edits, ${totalCommits} commits)`
-	);
+	// 3️⃣ Health freshness check (non-blocking)
+	const freshness = recentSuccess();
+	if (!freshness.ok) {
+		log.warn("No successful tracker run detected in the past 36 hours.");
+	}
+
+	let scanned_repos = 0; // we'll count as we go
+
+	try {
+		// 1) Get all repos we should scan
+		const repos = getActiveRepos();
+
+		// 2) Determine today's date in YYYY-MM-DD (local)
+		const today = new Date().toLocaleDateString("en-CA"); // e.g., 2025-10-22
+
+		// 3) Running totals across ALL repos for today
+		let totalAdded = 0;
+		let totalRemoved = 0;
+		let totalEdits = 0;
+		let totalCommits = 0;
+
+		// 4) Scan each repo and accumulate
+		for (const repo of repos) {
+			scanned_repos++;
+			console.log(`📊 Scanning ${repo.name}...`);
+			const stats = getTodayStats(repo.path); // { added, removed, edits, commits }
+
+			// save per-repo row (idempotent via ON CONFLICT in saveDailyStats)
+			saveDailyStats(repo.id, today, stats);
+
+			// add to the grand totals
+			totalAdded += stats.added;
+			totalRemoved += stats.removed;
+			totalEdits += stats.edits;
+			totalCommits += stats.commits;
+		}
+
+		// 5) Save the grand totals (idempotent via ON CONFLICT in saveDailyTotals)
+		saveDailyTotals(today, {
+			added: totalAdded,
+			removed: totalRemoved,
+			edits: totalEdits,
+			commits: totalCommits,
+		});
+
+		// Step 6.2 — Wrap-up and run record
+		const duration = Date.now() - start;
+		insertRun(db, "success", repos.length, duration);
+		log.info(`✅ Tracker run completed in ${duration} ms`);
+
+		// releaseLock();
+		// log.section("Tracker Run Ended");
+
+		// 6) Friendly summary
+		console.log(
+			`\n🔥 Total for ${today}: +${totalAdded} / -${totalRemoved} (${totalEdits} edits, ${totalCommits} commits)`
+		);
+	} catch (err) {
+		// If anything in the run failed, record a failed run and the error
+		const duration = Date.now() - start;
+		try {
+			insertRun(db, "failed", 0, duration, err?.message || String(err));
+		} catch (e2) {
+			// best effort; don’t rethrow
+		}
+		log.error("❌ Tracker failed: " + (err?.message || String(err)));
+	} finally {
+		// Always release the lock and mark end in the log
+		try {
+			releaseLock();
+		} catch {}
+		log.section("Tracker Run Ended");
+	}
 }
 
 // Run it now (you can comment this out later and call it from scheduler)
