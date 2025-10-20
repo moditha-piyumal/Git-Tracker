@@ -3,6 +3,15 @@ const db = require("./db/index");
 const { execSync } = require("child_process");
 const path = require("path");
 
+// STEP 0: Run the repo scanner automatically before tracking
+try {
+	console.log("🔁 Running repository scanner before tracking...");
+	require("./repoScanner");
+	console.log("✅ Repository scanner completed.\n");
+} catch (err) {
+	console.error("❌ Repo scanner failed:", err.message);
+}
+
 function getActiveRepos() {
 	const stmt = db.prepare(
 		"SELECT id, path, name FROM repos WHERE is_active = 1"
@@ -144,3 +153,5 @@ function runTrackerForToday() {
 
 // Run it now (you can comment this out later and call it from scheduler)
 runTrackerForToday();
+console.log("✅ Tracker finished successfully.");
+process.exit(0);
