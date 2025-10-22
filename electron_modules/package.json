@@ -11,6 +11,7 @@
   "description": "",
   "dependencies": {
     "better-sqlite3": "^12.4.1",
+    "chart.js": "^4.5.1",
     "electron-rebuild": "^3.2.9"
   }
 }
