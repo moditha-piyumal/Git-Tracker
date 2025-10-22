@@ -1,6 +1,6 @@
 // STEP 5 - PART 2: Verification Logic
 const path = require("path");
-const Database = require("better-sqlite3");
+const Database = require("../electron_modules/node_modules/better-sqlite3");
 const { spawn } = require("child_process");
 const { app, BrowserWindow, ipcMain, shell } = require("electron");
 
@@ -123,8 +123,33 @@ function createWindow(mode) {
 	win.loadFile(path.join(__dirname, "ui", "verifyWindow.html"));
 	const runs = getRecentRuns(5);
 	const health = evaluateHealth(runs);
+
 	win.webContents.on("did-finish-load", () => {
+		// Send health info
 		win.webContents.send("health-data", health);
+
+		// ==========================================
+		// Step 7.5 — Automatically send today's log
+		// ==========================================
+		try {
+			const today = new Date().toLocaleDateString("en-CA");
+			const logPath = path.join(
+				__dirname,
+				"data",
+				"logs",
+				`tracker-${today}.log`
+			);
+			let content = "";
+
+			if (fs.existsSync(logPath)) {
+				content = fs.readFileSync(logPath, "utf-8");
+			}
+
+			win.webContents.send("show-log", content);
+		} catch (err) {
+			console.error("❌ Failed to read today's log:", err.message);
+			win.webContents.send("show-log", "");
+		}
 	});
 
 	// send mode to renderer once it’s ready

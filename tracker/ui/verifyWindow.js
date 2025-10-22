@@ -30,3 +30,15 @@ document.getElementById("viewLogBtn").addEventListener("click", () => {
 document.getElementById("retryBtn").addEventListener("click", () => {
 	ipcRenderer.send("retry-tracker");
 });
+
+// ==========================================
+// Auto log viewer — receives today's log text
+// ==========================================
+ipcRenderer.on("show-log", (_, content) => {
+	const logBox = document.getElementById("logViewer");
+	if (content && content.trim().length > 0) {
+		logBox.textContent = content;
+	} else {
+		logBox.innerHTML = "<i>⚠️ No log file found for today.</i>";
+	}
+});
