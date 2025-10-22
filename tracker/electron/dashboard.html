@@ -51,14 +51,36 @@
     </header>
 
     <main>
+        <style>
+            /* fixed-height parent prevents infinite growth with responsive charts */
+            .chart-wrap {
+                position: relative;
+                /* Chart.js needs this for responsive sizing */
+                height: 360px;
+                /* pick what looks good on your screen */
+                width: 100%;
+            }
+
+            canvas {
+                display: block;
+            }
+
+            /* avoids extra inline gaps */
+        </style>
+
         <section>
             <h3>Daily Total Edits (Adds/Removes/Total + 7/30-day MAs)</h3>
-            <canvas id="dailyEditsChart" height="120"></canvas>
+            <div class="chart-wrap">
+                <canvas id="dailyEditsChart"></canvas>
+            </div>
             <p id="chartHint" style="opacity:.8;font-size:13px;margin-top:6px;">
                 Thicker line = Total Edits. Moving averages are based on Total Edits only.
             </p>
         </section>
+        <!-- ✅ add this back so renderer.js can update it -->
+        <p id="summary" style="margin-top:14px; opacity:.9;"></p>
     </main>
+
 
 
     <script src="renderer.js"></script>
