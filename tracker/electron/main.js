@@ -250,6 +250,41 @@ ipcMain.handle("get-repo-contribution", () => {
 });
 
 // ----------------------------------------------------
+// 🧠 IPC: Run Duration & Status Timeline (last 30 runs)
+// Returns finished_at, duration_ms, and status for each run
+// ----------------------------------------------------
+ipcMain.handle("get-run-timeline", (event, { limit = 30 } = {}) => {
+	try {
+		const db = new Database(dbPath, { readonly: true });
+
+		const rowsDesc = db
+			.prepare(
+				`
+      SELECT finished_at, duration_ms, status
+      FROM runs
+      ORDER BY finished_at DESC
+      LIMIT ?
+    `
+			)
+			.all(limit);
+
+		db.close();
+
+		// Reverse for chronological left→right display
+		const rows = rowsDesc.reverse();
+
+		// Separate data into arrays
+		const labels = rows.map((r) => r.finished_at);
+		const durations = rows.map((r) => r.duration_ms || 0);
+		const statuses = rows.map((r) => r.status);
+
+		return { ok: true, labels, durations, statuses };
+	} catch (err) {
+		return { ok: false, message: `DB Error: ${err.message}` };
+	}
+});
+
+// ----------------------------------------------------
 // 🧠 IPC: Manual “Run Tracker Now” button
 // ----------------------------------------------------
 ipcMain.handle("run-tracker-now", () => {

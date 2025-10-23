@@ -11,6 +11,7 @@ let dailyEditsChart = null; // keep a reference so we can destroy/redraw if need
 let commitsChart = null;
 let netLinesChart = null;
 let repoPieChart = null;
+let runTimelineChart = null;
 
 // Load dashboard data on startup
 async function loadDashboardData() {
@@ -36,6 +37,7 @@ runBtn.addEventListener("click", async () => {
 		await renderCommitsChart();
 		await renderNetLinesChart();
 		await renderRepoPieChart();
+		await renderRunTimelineChart();
 
 		runBtn.disabled = false;
 	}, 5000);
@@ -340,6 +342,104 @@ async function renderRepoPieChart() {
 		},
 	});
 }
+async function renderRunTimelineChart() {
+	console.log(
+		"Rendering run timeline chart at",
+		new Date().toLocaleTimeString()
+	);
+
+	// 1️⃣ Fetch data from the main process
+	const res = await ipcRenderer.invoke("get-run-timeline", { limit: 30 });
+
+	if (!res.ok) {
+		summary.textContent = res.message || "Failed to load run timeline chart.";
+		if (runTimelineChart) {
+			runTimelineChart.destroy();
+			runTimelineChart = null;
+		}
+		return;
+	}
+
+	const { labels, durations, statuses } = res;
+
+	// 2️⃣ Destroy old chart to prevent stacking
+	if (runTimelineChart) {
+		runTimelineChart.destroy();
+		runTimelineChart = null;
+	}
+
+	// 3️⃣ Prepare data points for scatter plot
+	const dataPoints = labels.map((label, i) => ({
+		x: i + 1, // run order number (1–30)
+		y: durations[i], // duration in ms
+		status: statuses[i], // for color coding
+	}));
+
+	// 4️⃣ Choose colors based on success/failure
+	const pointColors = dataPoints.map((p) =>
+		p.status === "success" ? "#4caf50" : "#f44336"
+	);
+
+	// 5️⃣ Create the chart
+	const ctx = document.getElementById("runTimelineChart").getContext("2d");
+	runTimelineChart = new Chart(ctx, {
+		type: "scatter",
+		data: {
+			datasets: [
+				{
+					label: "Run Duration (ms)",
+					data: dataPoints,
+					parsing: { xKey: "x", yKey: "y" },
+					borderWidth: 2,
+					borderColor: "#8be9fd",
+					showLine: true, // connect dots with a line
+					tension: 0.25, // slight curve for readability
+					pointRadius: 5,
+					pointBackgroundColor: pointColors,
+				},
+			],
+		},
+		options: {
+			responsive: true,
+			maintainAspectRatio: false,
+			scales: {
+				x: {
+					title: {
+						display: true,
+						text: "Run Order (Old → New)",
+						color: "#bbb",
+					},
+					ticks: {
+						color: "#bbb",
+						stepSize: 1,
+					},
+					grid: { color: "rgba(255,255,255,0.06)" },
+				},
+				y: {
+					title: {
+						display: true,
+						text: "Duration (ms)",
+						color: "#bbb",
+					},
+					ticks: { color: "#bbb" },
+					grid: { color: "rgba(255,255,255,0.06)" },
+					beginAtZero: true,
+				},
+			},
+			plugins: {
+				legend: { labels: { color: "#ddd" } },
+				tooltip: {
+					callbacks: {
+						label: (ctx) => {
+							const run = dataPoints[ctx.dataIndex];
+							return `Run ${run.x}: ${run.y} ms (${run.status})`;
+						},
+					},
+				},
+			},
+		},
+	});
+}
 
 // Initial load
 loadDashboardData();
@@ -347,3 +447,4 @@ renderDailyEdits();
 renderCommitsChart();
 renderNetLinesChart();
 renderRepoPieChart();
+renderRunTimelineChart();

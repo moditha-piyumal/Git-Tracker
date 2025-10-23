@@ -104,6 +104,15 @@
                 Shows each repository's percentage of today's total edits.
             </p>
         </section>
+        <section style="margin-top:40px;">
+            <h3>Run Duration & Status Timeline (Last 30 Runs)</h3>
+            <div class="chart-wrap">
+                <canvas id="runTimelineChart"></canvas>
+            </div>
+            <p style="opacity:.8;font-size:13px;margin-top:6px;">
+                Each dot = one tracker run. Green = success, Red = failure. Y-axis shows duration (ms).
+            </p>
+        </section>
 
         <!-- ✅ add this back so renderer.js can update it -->
         <p id="summary" style="margin-top:14px; opacity:.9;"></p>
