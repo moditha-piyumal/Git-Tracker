@@ -8,6 +8,7 @@ const summary = document.getElementById("summary");
 const runBtn = document.getElementById("runBtn");
 
 let dailyEditsChart = null; // keep a reference so we can destroy/redraw if needed
+let commitsChart = null;
 
 // Load dashboard data on startup
 async function loadDashboardData() {
@@ -30,6 +31,7 @@ runBtn.addEventListener("click", async () => {
 	setTimeout(async () => {
 		await loadDashboardData();
 		await renderDailyEdits();
+		await renderCommitsChart();
 		runBtn.disabled = false;
 	}, 5000);
 });
@@ -139,6 +141,67 @@ async function renderDailyEdits() {
 	});
 }
 
+// End of Daily Edits chart code
+
+async function renderCommitsChart() {
+	console.log("Rendering commits chart at", new Date().toLocaleTimeString());
+
+	// 1️⃣  Ask the main process for data
+	const res = await ipcRenderer.invoke("get-commits-chart", { days: 30 });
+
+	if (!res.ok) {
+		summary.textContent = res.message || "Failed to load commits chart.";
+		return;
+	}
+
+	const { labels, commits } = res;
+
+	// 2️⃣  Destroy any existing chart
+	if (commitsChart) {
+		commitsChart.destroy();
+		commitsChart = null;
+	}
+
+	// 3️⃣  Draw the chart
+	const ctx = document.getElementById("commitsChart").getContext("2d");
+	commitsChart = new Chart(ctx, {
+		type: "line",
+		data: {
+			labels,
+			datasets: [
+				{
+					label: "Commits per Day",
+					data: commits,
+					borderWidth: 2.5,
+					tension: 0.3, // gentle curve
+					pointRadius: 3,
+					pointHoverRadius: 5,
+				},
+			],
+		},
+		options: {
+			responsive: true,
+			maintainAspectRatio: false,
+			scales: {
+				x: {
+					ticks: { color: "#bbb", autoSkip: true },
+					grid: { color: "rgba(255,255,255,0.06)" },
+				},
+				y: {
+					ticks: { color: "#bbb" },
+					grid: { color: "rgba(255,255,255,0.06)" },
+					beginAtZero: true,
+				},
+			},
+			plugins: {
+				legend: { labels: { color: "#ddd" } },
+				tooltip: { mode: "index", intersect: false },
+			},
+		},
+	});
+}
+
 // Initial load
 loadDashboardData();
 renderDailyEdits();
+renderCommitsChart();
