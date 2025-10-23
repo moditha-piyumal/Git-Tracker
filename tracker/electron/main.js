@@ -208,6 +208,48 @@ ipcMain.handle(
 );
 
 // ----------------------------------------------------
+// 🧠 IPC: Per-Repo Contribution (Today's Edits)
+// Aggregates per-repo totals for the current day from daily_repo_stats.
+// ----------------------------------------------------
+ipcMain.handle("get-repo-contribution", () => {
+	try {
+		const db = new Database(dbPath, { readonly: true });
+
+		// 1️⃣  Compute today's date (local)
+		const today = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD
+
+		// 2️⃣  Query: total edits per repo for today
+		const rows = db
+			.prepare(
+				`
+      SELECT r.name AS repo, SUM(drs.edits) AS edits
+      FROM daily_repo_stats drs
+      JOIN repos r ON drs.repo_id = r.id
+      WHERE drs.date_yyyy_mm_dd = ?
+      GROUP BY r.name
+      HAVING edits > 0
+      ORDER BY edits DESC;
+    `
+			)
+			.all(today);
+
+		db.close();
+
+		if (!rows.length) {
+			return { ok: false, message: "No edits recorded today." };
+		}
+
+		// 3️⃣  Split into label/value arrays for Chart.js
+		const labels = rows.map((r) => r.repo);
+		const values = rows.map((r) => r.edits);
+
+		return { ok: true, labels, values, date: today };
+	} catch (err) {
+		return { ok: false, message: `DB Error: ${err.message}` };
+	}
+});
+
+// ----------------------------------------------------
 // 🧠 IPC: Manual “Run Tracker Now” button
 // ----------------------------------------------------
 ipcMain.handle("run-tracker-now", () => {

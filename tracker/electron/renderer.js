@@ -10,6 +10,7 @@ const runBtn = document.getElementById("runBtn");
 let dailyEditsChart = null; // keep a reference so we can destroy/redraw if needed
 let commitsChart = null;
 let netLinesChart = null;
+let repoPieChart = null;
 
 // Load dashboard data on startup
 async function loadDashboardData() {
@@ -34,6 +35,7 @@ runBtn.addEventListener("click", async () => {
 		await renderDailyEdits();
 		await renderCommitsChart();
 		await renderNetLinesChart();
+		await renderRepoPieChart();
 
 		runBtn.disabled = false;
 	}, 5000);
@@ -271,8 +273,77 @@ async function renderNetLinesChart() {
 	});
 }
 
+async function renderRepoPieChart() {
+	console.log(
+		"Rendering repo contribution chart at",
+		new Date().toLocaleTimeString()
+	);
+
+	// 1️⃣ Fetch today's data
+	const res = await ipcRenderer.invoke("get-repo-contribution");
+
+	if (!res.ok) {
+		summary.textContent = res.message || "Failed to load repo contributions.";
+		// Destroy old chart if it exists to clear stale data
+		if (repoPieChart) {
+			repoPieChart.destroy();
+			repoPieChart = null;
+		}
+		return;
+	}
+
+	const { labels, values, date } = res;
+
+	// 2️⃣ Clean up old chart if needed
+	if (repoPieChart) {
+		repoPieChart.destroy();
+		repoPieChart = null;
+	}
+
+	// 3️⃣ Draw the chart
+	const ctx = document.getElementById("repoPieChart").getContext("2d");
+	repoPieChart = new Chart(ctx, {
+		type: "pie",
+		data: {
+			labels,
+			datasets: [
+				{
+					label: `Edits (${date})`,
+					data: values,
+					borderWidth: 1,
+				},
+			],
+		},
+		options: {
+			responsive: true,
+			maintainAspectRatio: false,
+			plugins: {
+				legend: {
+					position: "right",
+					labels: {
+						color: "#ddd",
+						font: { size: 13 },
+					},
+				},
+				tooltip: {
+					callbacks: {
+						label: (context) => {
+							const label = context.label || "";
+							const val = context.parsed;
+							const total = values.reduce((a, b) => a + b, 0);
+							const pct = ((val / total) * 100).toFixed(1);
+							return `${label}: ${val} edits (${pct}%)`;
+						},
+					},
+				},
+			},
+		},
+	});
+}
+
 // Initial load
 loadDashboardData();
 renderDailyEdits();
 renderCommitsChart();
 renderNetLinesChart();
+renderRepoPieChart();
