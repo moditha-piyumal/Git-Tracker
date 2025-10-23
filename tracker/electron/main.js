@@ -121,6 +121,40 @@ ipcMain.handle("get-daily-edits", (event, { days = 120 } = {}) => {
 });
 
 // ----------------------------------------------------
+// 🧠 IPC: Get commits per day (last 30 days)
+// ----------------------------------------------------
+ipcMain.handle("get-commits-chart", (event, { days = 30 } = {}) => {
+	try {
+		const db = new Database(dbPath, { readonly: true });
+
+		// 1️⃣  Get the last N days of commits
+		const rowsDesc = db
+			.prepare(
+				`
+      SELECT date_yyyy_mm_dd AS date, commits
+      FROM daily_totals
+      ORDER BY date_yyyy_mm_dd DESC
+      LIMIT ?
+    `
+			)
+			.all(days);
+
+		db.close();
+
+		// 2️⃣  Reverse to show oldest → newest
+		const rows = rowsDesc.reverse();
+
+		// 3️⃣  Split into arrays for Chart.js
+		const labels = rows.map((r) => r.date);
+		const commits = rows.map((r) => r.commits || 0);
+
+		return { ok: true, labels, commits };
+	} catch (err) {
+		return { ok: false, message: `DB Error: ${err.message}` };
+	}
+});
+
+// ----------------------------------------------------
 // 🧠 IPC: Manual “Run Tracker Now” button
 // ----------------------------------------------------
 ipcMain.handle("run-tracker-now", () => {
