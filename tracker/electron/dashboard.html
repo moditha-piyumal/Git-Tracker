@@ -77,12 +77,24 @@
                 Thicker line = Total Edits. Moving averages are based on Total Edits only.
             </p>
         </section>
+        <!-- Edits for the day above! -->
         <section style="margin-top:40px;">
+            <h3>Commits per Day (Last 30 Days)</h3>
             <div class="chart-wrap">
                 <canvas id="commitsChart"></canvas>
             </div>
-            <h3>Commits per Day (Last 30 Days)</h3>
         </section>
+        <!-- Commits for the day above! -->
+        <section style="margin-top:40px;">
+            <h3>Net Lines Over Time (Cumulative)</h3>
+            <div class="chart-wrap">
+                <canvas id="netLinesChart"></canvas>
+            </div>
+            <p style="opacity:.8;font-size:13px;margin-top:6px;">
+                Computed as a running total of (adds − removes), clamped at 0.
+            </p>
+        </section>
+        <!-- Net Lines for the day above! -->
         <!-- ✅ add this back so renderer.js can update it -->
         <p id="summary" style="margin-top:14px; opacity:.9;"></p>
 

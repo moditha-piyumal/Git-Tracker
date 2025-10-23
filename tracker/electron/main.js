@@ -155,6 +155,59 @@ ipcMain.handle("get-commits-chart", (event, { days = 30 } = {}) => {
 });
 
 // ----------------------------------------------------
+// 🧠 IPC: Net Lines Over Time (Cumulative)
+// Derives a cumulative series from daily_totals: cum += (insertions - deletions)
+// We clamp at 0 so the curve never dips below zero (matches your plan).
+// ----------------------------------------------------
+ipcMain.handle(
+	"get-net-lines",
+	(event, { days = 365, clampAtZero = true } = {}) => {
+		try {
+			const db = new Database(dbPath, { readonly: true });
+
+			// 1) Pull last N daily rows, newest first (so we reverse shortly)
+			const rowsDesc = db
+				.prepare(
+					`
+      SELECT date_yyyy_mm_dd AS date, insertions AS added, deletions AS removed
+      FROM daily_totals
+      ORDER BY date_yyyy_mm_dd DESC
+      LIMIT ?
+    `
+				)
+				.all(days);
+
+			db.close();
+
+			// 2) Chart wants oldest → newest for a natural left→right timeline
+			const rows = rowsDesc.reverse();
+
+			// 3) Build arrays and compute the cumulative series
+			const labels = [];
+			const cumulative = [];
+			let running = 0; // running total of "net" (adds - removes)
+
+			for (const r of rows) {
+				labels.push(r.date);
+
+				const adds = Number(r.added || 0); // coerce to numbers; null-safe
+				const rems = Number(r.removed || 0);
+				const net = adds - rems; // day’s net change
+
+				running += net; // accumulate
+				if (clampAtZero && running < 0) running = 0; // never dip below 0
+
+				cumulative.push(running);
+			}
+
+			return { ok: true, labels, cumulative };
+		} catch (err) {
+			return { ok: false, message: `DB Error: ${err.message}` };
+		}
+	}
+);
+
+// ----------------------------------------------------
 // 🧠 IPC: Manual “Run Tracker Now” button
 // ----------------------------------------------------
 ipcMain.handle("run-tracker-now", () => {

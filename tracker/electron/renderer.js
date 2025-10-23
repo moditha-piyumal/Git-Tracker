@@ -9,6 +9,7 @@ const runBtn = document.getElementById("runBtn");
 
 let dailyEditsChart = null; // keep a reference so we can destroy/redraw if needed
 let commitsChart = null;
+let netLinesChart = null;
 
 // Load dashboard data on startup
 async function loadDashboardData() {
@@ -32,6 +33,8 @@ runBtn.addEventListener("click", async () => {
 		await loadDashboardData();
 		await renderDailyEdits();
 		await renderCommitsChart();
+		await renderNetLinesChart();
+
 		runBtn.disabled = false;
 	}, 5000);
 });
@@ -201,7 +204,75 @@ async function renderCommitsChart() {
 	});
 }
 
+// End of the Commits Chart
+
+async function renderNetLinesChart() {
+	console.log("Rendering net lines chart at", new Date().toLocaleTimeString());
+
+	// 1) fetch cumulative data (last 365 days by default)
+	const res = await ipcRenderer.invoke("get-net-lines", {
+		days: 365,
+		clampAtZero: true,
+	});
+
+	if (!res.ok) {
+		summary.textContent = res.message || "Failed to load net lines chart.";
+		return;
+	}
+
+	const { labels, cumulative } = res;
+
+	// 2) prevent chart stacking: destroy the old instance first
+	if (netLinesChart) {
+		netLinesChart.destroy();
+		netLinesChart = null;
+	}
+
+	// 3) draw the chart in a stable, fixed-height container
+	const ctx = document.getElementById("netLinesChart").getContext("2d");
+	netLinesChart = new Chart(ctx, {
+		type: "line",
+		data: {
+			labels,
+			datasets: [
+				{
+					label: "Cumulative Net Lines",
+					data: cumulative,
+					borderWidth: 2.5, // a bit thicker to emphasize the long-term curve
+					tension: 0.2, // gentle smoothing (0 = straight lines)
+					pointRadius: 0, // cleaner look for long time ranges
+					fill: false, // keep it a line; we can enable area fill later if you like
+				},
+			],
+		},
+		options: {
+			responsive: true,
+			maintainAspectRatio: false, // let .chart-wrap control height
+			scales: {
+				x: {
+					ticks: { color: "#bbb", autoSkip: true, maxRotation: 0 },
+					grid: { color: "rgba(255,255,255,0.06)" },
+				},
+				y: {
+					ticks: { color: "#bbb" },
+					grid: { color: "rgba(255,255,255,0.06)" },
+					beginAtZero: true, // aligns with clampAtZero=true
+				},
+			},
+			plugins: {
+				legend: { labels: { color: "#ddd" } },
+				tooltip: { mode: "index", intersect: false },
+			},
+			interaction: {
+				mode: "index",
+				intersect: false,
+			},
+		},
+	});
+}
+
 // Initial load
 loadDashboardData();
 renderDailyEdits();
 renderCommitsChart();
+renderNetLinesChart();
