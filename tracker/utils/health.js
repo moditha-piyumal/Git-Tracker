@@ -23,14 +23,14 @@ function dbExistsAndWritable() {
 	}
 }
 
-// 2️⃣ Check recent successful run in `runs` table
 function recentSuccess(hours = 36) {
+	let db; // declare outside so we can close it in finally
 	try {
 		if (!fs.existsSync(dbPath)) {
 			return { ok: false, reason: "not_found" };
 		}
 
-		const db = new Database(dbPath, { readonly: true });
+		db = new Database(dbPath, { readonly: true });
 		const stmt = db.prepare(
 			"SELECT finished_at FROM runs WHERE status='success' ORDER BY finished_at DESC LIMIT 1"
 		);
@@ -41,7 +41,6 @@ function recentSuccess(hours = 36) {
 		}
 
 		const lastRun = new Date(row.finished_at.replace(" ", "T"));
-
 		const ageHrs = (Date.now() - lastRun.getTime()) / (1000 * 60 * 60);
 
 		if (ageHrs > hours) {
@@ -51,6 +50,8 @@ function recentSuccess(hours = 36) {
 		return { ok: true, lastRun };
 	} catch (err) {
 		return { ok: false, reason: "query_failed", error: err };
+	} finally {
+		if (db) db.close(); // ✅ always closes the connection
 	}
 }
 
