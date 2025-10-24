@@ -25,8 +25,9 @@ function getActiveRepos() {
 
 function getTodayStats(repoPath) {
 	try {
+		const now = new Date(); // 🟢 add this line
+
 		// Midnight in local time (Asia/Colombo)
-		// local YYYY-MM-DD 00:00:00 (no timezone → Git treats it as local)
 		const y = now.getFullYear();
 		const m = String(now.getMonth() + 1).padStart(2, "0");
 		const d = String(now.getDate()).padStart(2, "0");
@@ -56,7 +57,6 @@ function getTodayStats(repoPath) {
 
 		return { added, removed, edits: added + removed, commits };
 	} catch {
-		// If repo has no commits today or git fails
 		return { added: 0, removed: 0, edits: 0, commits: 0 };
 	}
 }
