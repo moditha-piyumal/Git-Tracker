@@ -38,7 +38,7 @@ runBtn.addEventListener("click", async () => {
 		await renderNetLinesChart();
 		await renderRepoPieChart();
 		await renderRunTimelineChart();
-
+		await renderStreak();
 		runBtn.disabled = false;
 	}, 5000);
 });
@@ -440,6 +440,39 @@ async function renderRunTimelineChart() {
 		},
 	});
 }
+async function renderStreak() {
+	console.log("Calculating streaks at", new Date().toLocaleTimeString());
+
+	const res = await ipcRenderer.invoke("get-streak");
+	const valueEl = document.getElementById("streakValue");
+	const longestEl = document.getElementById("longestValue");
+	const noteEl = document.getElementById("streakNote");
+
+	if (!res || !res.ok) {
+		valueEl.textContent = "—";
+		longestEl.textContent = "—";
+		noteEl.textContent = res?.message || "Unable to compute streaks.";
+		return;
+	}
+
+	const { current, longest } = res;
+
+	// current streak
+	valueEl.textContent = `${current} day${current === 1 ? "" : "s"}`;
+	// longest streak
+	longestEl.textContent = `${longest} day${longest === 1 ? "" : "s"}`;
+
+	// friendly motivational note
+	if (current === 0) {
+		noteEl.textContent =
+			"No active streak yet. Make one edit today to start! 💪";
+	} else if (current === longest) {
+		noteEl.textContent = "🔥 You're at your all-time record! Keep it going!";
+	} else {
+		noteEl.textContent =
+			"A mind needs coding like a sword needs a whetstone. Keep going!👏";
+	}
+}
 
 // Initial load
 loadDashboardData();
@@ -448,3 +481,4 @@ renderCommitsChart();
 renderNetLinesChart();
 renderRepoPieChart();
 renderRunTimelineChart();
+renderStreak();

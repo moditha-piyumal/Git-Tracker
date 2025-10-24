@@ -283,6 +283,68 @@ ipcMain.handle("get-run-timeline", (event, { limit = 30 } = {}) => {
 		return { ok: false, message: `DB Error: ${err.message}` };
 	}
 });
+// ----------------------------------------------------
+// 🔥 IPC: Current + Longest Active-Day Streaks
+// A "day is active" if daily_totals.edits > 0
+// ----------------------------------------------------
+ipcMain.handle("get-streak", () => {
+	try {
+		const db = new Database(dbPath, { readonly: true });
+		const today = new Date().toLocaleDateString("en-CA");
+
+		// 1️⃣ fetch all recorded days up to today (we’ll scan all for longest)
+		const rows = db
+			.prepare(
+				`
+      SELECT date_yyyy_mm_dd AS date, edits
+      FROM daily_totals
+      WHERE date_yyyy_mm_dd <= ?
+      ORDER BY date_yyyy_mm_dd ASC
+    `
+			)
+			.all(today);
+		db.close();
+
+		// helper: date stepping
+		function nextDate(iso) {
+			const [y, m, d] = iso.split("-").map(Number);
+			const dt = new Date(y, m - 1, d);
+			dt.setDate(dt.getDate() + 1);
+			return dt.toLocaleDateString("en-CA");
+		}
+		function prevDate(iso) {
+			const [y, m, d] = iso.split("-").map(Number);
+			const dt = new Date(y, m - 1, d);
+			dt.setDate(dt.getDate() - 1);
+			return dt.toLocaleDateString("en-CA");
+		}
+
+		// 2️⃣ current streak: walk backward from today until break
+		const map = new Map(rows.map((r) => [r.date, Number(r.edits || 0)]));
+		let current = 0;
+		let cursor = today;
+		while (map.has(cursor) && map.get(cursor) > 0) {
+			current++;
+			cursor = prevDate(cursor);
+		}
+
+		// 3️⃣ longest streak: walk forward through all rows
+		let longest = 0;
+		let run = 0;
+		for (let i = 0; i < rows.length; i++) {
+			if ((rows[i].edits || 0) > 0) {
+				run++;
+				if (run > longest) longest = run;
+			} else {
+				run = 0; // break
+			}
+		}
+
+		return { ok: true, current, longest };
+	} catch (err) {
+		return { ok: false, message: `Streak calc error: ${err.message}` };
+	}
+});
 
 // ----------------------------------------------------
 // 🧠 IPC: Manual “Run Tracker Now” button

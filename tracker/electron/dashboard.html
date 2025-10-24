@@ -67,6 +67,42 @@
 
             /* avoids extra inline gaps */
         </style>
+        <section style="display:flex; align-items:center; gap:20px; margin-bottom:16px;">
+            <!-- current streak -->
+            <div id="streakBadge" style="
+      background:#222;
+      border:1px solid rgba(255,255,255,0.08);
+      padding:10px 14px;
+      border-radius:10px;
+      display:flex;
+      align-items:center;
+      gap:10px;">
+                <span style="font-size:20px;">🔥</span>
+                <div style="line-height:1.1;">
+                    <div style="font-size:13px; opacity:.8;">Current Streak</div>
+                    <div id="streakValue" style="font-size:22px; font-weight:700;">0 days</div>
+                </div>
+            </div>
+
+            <!-- longest streak -->
+            <div id="longestBadge" style="
+      background:#222;
+      border:1px solid rgba(255,255,255,0.08);
+      padding:10px 14px;
+      border-radius:10px;
+      display:flex;
+      align-items:center;
+      gap:10px;">
+                <span style="font-size:20px;">🏆</span>
+                <div style="line-height:1.1;">
+                    <div style="font-size:13px; opacity:.8;">Longest Streak</div>
+                    <div id="longestValue" style="font-size:22px; font-weight:700;">0 days</div>
+                </div>
+            </div>
+
+            <div id="streakNote" style="opacity:.8; font-size:13px;"></div>
+        </section>
+
 
         <section>
             <h3>Daily Total Edits (Adds/Removes/Total + 7/30-day MAs)</h3>
