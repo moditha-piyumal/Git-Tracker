@@ -6,6 +6,118 @@ const { ipcRenderer } = require("electron");
 const banner = document.getElementById("statusBanner");
 const summary = document.getElementById("summary");
 const runBtn = document.getElementById("runBtn");
+const loadingOverlay = document.getElementById("loadingOverlay");
+const motivationMessage = document.getElementById("motivationMessage");
+
+const motivationalQuotes = [
+	// ⚔️ Determination & Ambition
+	"A dragon does not fear the storm — it becomes the storm. 🐉",
+	"Fire made me, and fire will not break me. 🔥",
+	"The Iron Throne is not taken by luck — it’s earned line by line of code. 👑",
+	"Every error you fix is another sword forged in your arsenal. ⚔️",
+	"A Targaryen stands tall not because of blood, but because of will. 💪",
+	"Victory favors those who write, test, and rise again. 🛠️",
+	"You’re not just coding — you’re conquering realms unseen. 🌌",
+	"There’s no victory without the burns of battle. 🔥",
+	"Conquer your fear, or it will conquer you. 🐉",
+	"Each commit is a claim to your own Iron Throne. 🧱",
+
+	// 💡 Persistence & Growth
+	"Even a dragon must learn to crawl before it flies. 🐣",
+	"Progress may be slow, but dragons do not rush their fire. 🐲",
+	"A day without growth is a day the storm wins. 🌧️",
+	"Burn your doubts before they burn your dreams. 🔥",
+	"The climb is long, but every line brings you closer to the peak. 🏔️",
+	"Code like Rhaenyra fought — with fire and purpose. 👑",
+	"When you fall, rise again — stronger, wiser, sharper. 🗡️",
+	"Not every day brings glory, but every day brings progress. ⏳",
+	"There are no small victories, only steps toward the crown. 🏆",
+	"Patience tempers fire into power. 🔥",
+
+	// 🧠 Wisdom & Learning
+	"Learn as the maesters learned — through failure and flame. 📜",
+	"Knowledge is your Valyrian steel — unbreakable, sharp, and rare. ⚙️",
+	"Even the smallest script can change the course of kingdoms. 📜",
+	"Those who read the code write the future. 🧠",
+	"Your errors are lessons carved into history. ✍️",
+	"You learn more from the ashes than from the crown. 🌑",
+	"A wise coder bends before the bug — then breaks it. 🐛",
+	"The dragons of knowledge sleep within your code. 🐉",
+	"When you debug, you sharpen your sword. ⚔️",
+	"Books or code — both are power, if you know how to read them. 📚",
+
+	// 💀 Resilience in Struggle
+	"The night is dark, but your fire burns bright. 🌙🔥",
+	"When despair whispers, remind it who you are. 👑",
+	"Even when all seems lost, your spark remains. 💫",
+	"Stand firm — winter tests the strong. ❄️",
+	"A coder’s watch never ends. 🕯️",
+	"You may bend, but you will not break. 🪶",
+	"Dragons rise from ashes — not comfort. 🐉",
+	"No storm lasts forever, but strength forged in it does. ⛈️",
+	"Hold fast. The dawn always follows the long night. 🌅",
+	"You’ve faced worse monsters than this bug. 🐲",
+
+	// 🐉 Power & Identity
+	"Remember who you are, and let it be your armor. ⚔️",
+	"You were born to create fire from nothing. 🔥",
+	"A true Targaryen does not seek permission — only purpose. 👑",
+	"Fear cuts deeper than failure. Never yield to it. 🩸",
+	"You are your own house, your own name, your own power. 🏰",
+	"The world bends to those who dare to build it. 🌍",
+	"Others write history — you code it. 💻",
+	"Power is not given; it’s compiled from persistence. ⚙️",
+	"Forge your destiny in the heat of your own ambition. 🔥",
+	"A mind on fire builds empires unseen. 🧠🔥",
+
+	// 💬 Legacy & Vision
+	"Leave a mark worthy of song — even if no bard ever sings it. 🎶",
+	"You’re not writing code; you’re writing your story. 📜",
+	"The legacy of fire is not destruction, but rebirth. 🔥",
+	"One day, someone will stand on what you built — make it strong. 🧱",
+	"Your name will echo through the projects you complete. 💻",
+	"Great houses fall, but great work endures. 🕯️",
+	"Every masterpiece begins with one line. ✍️",
+	"Do not wait for destiny — compile it yourself. 💡",
+	"Your code may outlive kingdoms. 🏰",
+	"Dreams are ideas that refuse to die. 🌙",
+
+	// 🪶 Reflection & Balance
+	"Fire without control burns the coder too. ⚖️",
+	"Even dragons need rest before the next flight. 💤",
+	"Know when to fight, and when to breathe. 🌬️",
+	"Your health fuels your flame — protect it. ❤️‍🔥",
+	"Balance sharpens the edge of your ambition. ⚔️",
+	"Victory means nothing if you forget why you started. 🕊️",
+	"Discipline, not rage, wins the throne. 👑",
+	"Write with passion, debug with patience. 🧘",
+	"A calm mind tames wild fire. 🔥🧠",
+	"Greatness is built in silence — not chaos. 🌌",
+
+	// 🏰 Leadership & Courage
+	"Command your code as a king commands his banners. ⚔️",
+	"Leadership begins with accountability. 🏰",
+	"Courage is not the absence of fear, but the mastery of it. 🐉",
+	"A leader’s strength lies in their consistency. 🔥",
+	"Let your work speak louder than your crown. 👑",
+	"Dragons fly highest when the winds resist. 🌪️",
+	"In every coder, a dragon sleeps — wake yours. 🐉",
+	"Face your challenges as Aemond faced the storm — unflinching. 🌩️",
+	"Every empire begins with one fearless decision. 💥",
+	"Courage writes the history ambition dreams of. 🩸",
+
+	// ⚙️ Persistence & Streaks
+	"Keep your streak — it’s the fire that never goes out. 🔥",
+	"Seven days make a habit; seven habits make a legacy. 📆",
+	"Your streak is proof you’ve not bent the knee to excuses. ⚔️",
+	"The fire grows with every line you add. 🪶",
+	"Breaks are for mortals — you are of fire and blood. 🐲",
+	"One day missed is no defeat, but two days missed is surrender. 🕯️",
+	"Protect your streak like a dragon guards its hoard. 💎",
+	"The heat of your effort keeps the darkness at bay. 🌙🔥",
+	"Discipline is the true heir to the throne. 👑",
+	"Code today, rise tomorrow — the realm remembers consistency. 🏰",
+];
 
 let dailyEditsChart = null; // keep a reference so we can destroy/redraw if needed
 let commitsChart = null;
@@ -25,7 +137,17 @@ async function loadDashboardData() {
 	}
 }
 
+function showRandomMotivation() {
+	const randomIndex = Math.floor(Math.random() * motivationalQuotes.length);
+	motivationMessage.textContent = motivationalQuotes[randomIndex];
+}
+
+showRandomMotivation();
+
 runBtn.addEventListener("click", async () => {
+	// 🌀 Show spinner overlay
+	loadingOverlay.style.display = "flex";
+
 	runBtn.disabled = true;
 	banner.textContent = "⏳ Running tracker…";
 	await ipcRenderer.invoke("run-tracker-now");
@@ -40,6 +162,8 @@ runBtn.addEventListener("click", async () => {
 		await renderRunTimelineChart();
 		await renderStreak();
 		runBtn.disabled = false;
+		// ✅ Hide spinner overlay
+		loadingOverlay.style.display = "none";
 	}, 5000);
 });
 async function renderDailyEdits() {

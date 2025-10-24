@@ -66,6 +66,52 @@
             }
 
             /* avoids extra inline gaps */
+
+            /* === Full-screen loading overlay === */
+            #loadingOverlay {
+                display: none;
+                /* hidden by default */
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.55);
+                /* semi-transparent gray */
+                z-index: 9999;
+                /* above everything */
+                justify-content: center;
+                align-items: center;
+                flex-direction: column;
+                color: #fff;
+                font-family: sans-serif;
+            }
+
+            /* spinner circle */
+            .spinner {
+                border: 6px solid rgba(255, 255, 255, 0.3);
+                border-top: 6px solid #00e0ff;
+                border-radius: 50%;
+                width: 60px;
+                height: 60px;
+                animation: spin 1s linear infinite;
+            }
+
+            @keyframes spin {
+                0% {
+                    transform: rotate(0deg);
+                }
+
+                100% {
+                    transform: rotate(360deg);
+                }
+            }
+
+            .spinner-text {
+                margin-top: 12px;
+                font-size: 15px;
+                letter-spacing: 0.5px;
+            }
         </style>
         <section style="display:flex; align-items:center; gap:20px; margin-bottom:16px;">
             <!-- current streak -->
@@ -103,6 +149,10 @@
             <div id="streakNote" style="opacity:.8; font-size:13px;"></div>
         </section>
 
+        <!-- 💬 Random motivational message -->
+        <div id="motivationMessage"
+            style="margin:16px 0; text-align:center; font-size:23px; color: darkorange; font-weight: bold;">
+        </div>
 
         <section>
             <h3>Daily Total Edits (Adds/Removes/Total + 7/30-day MAs)</h3>
@@ -119,6 +169,10 @@
             <div class="chart-wrap">
                 <canvas id="commitsChart"></canvas>
             </div>
+            <p style="opacity:.8;font-size:13px;margin-top:6px;">
+                Small daily commits build great projects 💪
+            </p>
+
         </section>
         <!-- Commits for the day above! -->
         <section style="margin-top:40px;">
@@ -152,6 +206,13 @@
 
         <!-- ✅ add this back so renderer.js can update it -->
         <p id="summary" style="margin-top:14px; opacity:.9;"></p>
+
+        <!-- 🌀 Full-screen loading overlay -->
+        <div id="loadingOverlay">
+            <div class="spinner"></div>
+            <p class="spinner-text">Running Tracker… Please wait ⏳</p>
+        </div>
+
 
 
     </main>
