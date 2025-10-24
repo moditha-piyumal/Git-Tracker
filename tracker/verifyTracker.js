@@ -48,7 +48,8 @@ function evaluateHealth(runs) {
 	}
 
 	const latest = runs[0];
-	const lastTime = new Date(latest.finished_at);
+	const lastTime = new Date(latest.finished_at.replace(" ", "T"));
+
 	const hoursAgo = (Date.now() - lastTime.getTime()) / (1000 * 60 * 60);
 
 	if (latest.status === "failed") {
@@ -71,9 +72,10 @@ function evaluateHealth(runs) {
 
 	return {
 		color: "green",
-		message: `🟢 Last run successful — ${latest.scanned_repos} repos, ${
+		message: `🟢 Last run successful — ${latest.scanned_repos} repos, ran in ${
 			latest.duration_ms
-		} ms ago (${Math.round(hoursAgo)} h).`,
+		} ms (${Math.round(hoursAgo)} h ago).`,
+
 		recent: runs,
 	};
 }

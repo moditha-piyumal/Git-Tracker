@@ -26,21 +26,15 @@ function getActiveRepos() {
 function getTodayStats(repoPath) {
 	try {
 		// Midnight in local time (Asia/Colombo)
-		const now = new Date();
-		const startOfDay = new Date(
-			now.getFullYear(),
-			now.getMonth(),
-			now.getDate()
-		);
-		const since = startOfDay.toISOString();
+		// local YYYY-MM-DD 00:00:00 (no timezone → Git treats it as local)
+		const y = now.getFullYear();
+		const m = String(now.getMonth() + 1).padStart(2, "0");
+		const d = String(now.getDate()).padStart(2, "0");
+		const since = `${y}-${m}-${d} 00:00:00`;
 
-		// Run git log to get today's changes
 		const output = execSync(
-			`git log --since="${since}" --numstat --no-merges`,
-			{
-				cwd: repoPath,
-				encoding: "utf8",
-			}
+			`git log --since="${since}" --numstat --no-merges -M`,
+			{ cwd: repoPath, encoding: "utf8" }
 		);
 
 		let added = 0,

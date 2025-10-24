@@ -40,7 +40,8 @@ function recentSuccess(hours = 36) {
 			return { ok: false, reason: "no_runs" };
 		}
 
-		const lastRun = new Date(row.finished_at);
+		const lastRun = new Date(row.finished_at.replace(" ", "T"));
+
 		const ageHrs = (Date.now() - lastRun.getTime()) / (1000 * 60 * 60);
 
 		if (ageHrs > hours) {
