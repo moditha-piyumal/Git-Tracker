@@ -271,6 +271,55 @@ ipcMain.handle("get-repo-contribution", () => {
         - Aggregates SUM(edits) from `daily_repo_stats` table.
         - Handy for tracking which repos get the most attention weekly.
     🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷  */
+// ----------------------------------------------------
+// 🧠 IPC: Per-Repo Contribution (Last 7 Days)
+// Aggregates per-repo totals across the last 7 days from daily_repo_stats.
+// ----------------------------------------------------
+ipcMain.handle("get-repo-contribution-week", () => {
+	try {
+		const db = new Database(dbPath, { readonly: true });
+
+		// 1️⃣ Compute date range (today and 6 days ago)
+		const today = new Date();
+		const past = new Date();
+		past.setDate(today.getDate() - 6);
+
+		const endDate = today.toLocaleDateString("en-CA"); // YYYY-MM-DD
+		const startDate = past.toLocaleDateString("en-CA");
+
+		// 2️⃣ Query: total edits per repo over 7 days
+		const rows = db
+			.prepare(
+				`
+        SELECT r.name AS repo, SUM(drs.edits) AS edits
+        FROM daily_repo_stats drs
+        JOIN repos r ON drs.repo_id = r.id
+        WHERE drs.date_yyyy_mm_dd BETWEEN ? AND ?
+        GROUP BY r.name
+        HAVING edits > 0
+        ORDER BY edits DESC;
+      `
+			)
+			.all(startDate, endDate);
+
+		db.close();
+
+		if (!rows.length) {
+			return {
+				ok: false,
+				message: "No edits recorded in the last 7 days.",
+			};
+		}
+
+		// 3️⃣ Split into label/value arrays for Chart.js
+		const labels = rows.map((r) => r.repo);
+		const values = rows.map((r) => r.edits);
+
+		return { ok: true, labels, values, startDate, endDate };
+	} catch (err) {
+		return { ok: false, message: `DB Error: ${err.message}` };
+	}
+});
 
 /*  💠💠💠💠💠💠💠💠💠💠💠💠💠💠 END OF "REPO CONTRIBUTION CHART — Weekly" 💠💠💠💠💠💠💠💠💠💠💠💠💠💠  */
 

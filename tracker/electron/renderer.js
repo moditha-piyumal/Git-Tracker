@@ -159,6 +159,7 @@ runBtn.addEventListener("click", async () => {
 		await renderCommitsChart();
 		await renderNetLinesChart();
 		await renderRepoPieChart();
+		await renderRepoWeekChart();
 		await renderRunTimelineChart();
 		await renderStreak();
 		runBtn.disabled = false;
@@ -486,6 +487,70 @@ async function renderRepoPieChart() {
         - Shares tooltip and legend styling with daily chart.
         - Aggregated data comes from the main.js IPC handler.
     🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷  */
+async function renderRepoWeekChart() {
+	console.log(
+		"Rendering weekly repo contribution chart at",
+		new Date().toLocaleTimeString()
+	);
+
+	// 1️⃣ Fetch last 7 days' data
+	const res = await ipcRenderer.invoke("get-repo-contribution-week");
+
+	if (!res.ok) {
+		summary.textContent = res.message || "Failed to load weekly repo data.";
+		if (repoWeekChart) {
+			repoWeekChart.destroy();
+			repoWeekChart = null;
+		}
+		return;
+	}
+
+	const { labels, values, startDate, endDate } = res;
+
+	// 2️⃣ Destroy old chart if it exists
+	if (repoWeekChart) {
+		repoWeekChart.destroy();
+		repoWeekChart = null;
+	}
+
+	// 3️⃣ Draw the doughnut chart
+	const ctx = document.getElementById("repoChartWeek").getContext("2d");
+	repoWeekChart = new Chart(ctx, {
+		type: "doughnut",
+		data: {
+			labels,
+			datasets: [
+				{
+					label: `Edits (${startDate} → ${endDate})`,
+					data: values,
+					borderWidth: 1,
+				},
+			],
+		},
+		options: {
+			responsive: true,
+			maintainAspectRatio: false,
+			cutout: "40%",
+			plugins: {
+				legend: {
+					position: "right",
+					labels: { color: "#ddd", font: { size: 13 } },
+				},
+				tooltip: {
+					callbacks: {
+						label: (context) => {
+							const label = context.label || "";
+							const val = context.parsed;
+							const total = values.reduce((a, b) => a + b, 0);
+							const pct = ((val / total) * 100).toFixed(1);
+							return `${label}: ${val} edits (${pct}%)`;
+						},
+					},
+				},
+			},
+		},
+	});
+}
 
 /*  💠💠💠💠💠💠💠💠💠💠💠💠💠💠 END OF "REPO CONTRIBUTION CHART — Weekly" 💠💠💠💠💠💠💠💠💠💠💠💠💠💠  */
 async function renderRunTimelineChart() {
@@ -626,5 +691,6 @@ renderDailyEdits();
 renderCommitsChart();
 renderNetLinesChart();
 renderRepoPieChart(); // 💠💠💠 RELEVANT TO DAILY REPO CONTRIBUTION CHART 💠💠💠
+renderRepoWeekChart(); // 💠💠💠 RELEVANT TO WEEKLY REPO CONTRIBUTION CHART 💠💠💠
 renderRunTimelineChart();
 renderStreak();
