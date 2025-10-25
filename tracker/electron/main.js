@@ -206,6 +206,16 @@ ipcMain.handle(
 		}
 	}
 );
+/*  💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠
+    📊  REPO CONTRIBUTION CHART — "Today"
+    🧭  Purpose: Shows per-repo contributions (lines added + removed) for today only.
+    ⚙️  Source IPC: "get-repo-contribution"
+    🎨  Chart Type: Doughnut / Pie
+    🗓️  Time Range: Current Date
+    💬  Notes:
+        - This chart updates every day with today's totals.
+        - Shares the same color palette logic as the weekly chart.
+    💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠  */
 
 // ----------------------------------------------------
 // 🧠 IPC: Per-Repo Contribution (Today's Edits)
@@ -248,6 +258,21 @@ ipcMain.handle("get-repo-contribution", () => {
 		return { ok: false, message: `DB Error: ${err.message}` };
 	}
 });
+/*  💠💠💠💠💠💠💠💠💠💠💠💠💠💠 END OF "REPO CONTRIBUTION CHART — Today" 💠💠💠💠💠💠💠💠💠💠💠💠💠💠  */
+
+/*  🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷
+    📊  REPO CONTRIBUTION CHART — "Last 7 Days"
+    🧭  Purpose: Shows total per-repo contributions for the past 7 days.
+    ⚙️  Source IPC: "get-repo-contribution-week"
+    🎨  Chart Type: Doughnut / Comparative
+    🗓️  Time Range: 7 days (Today + previous 6)
+    💬  Notes:
+        - Uses the same palette and tooltip style as the daily chart.
+        - Aggregates SUM(edits) from `daily_repo_stats` table.
+        - Handy for tracking which repos get the most attention weekly.
+    🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷  */
+
+/*  💠💠💠💠💠💠💠💠💠💠💠💠💠💠 END OF "REPO CONTRIBUTION CHART — Weekly" 💠💠💠💠💠💠💠💠💠💠💠💠💠💠  */
 
 // ----------------------------------------------------
 // 🧠 IPC: Run Duration & Status Timeline (last 30 runs)
