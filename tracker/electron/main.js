@@ -296,7 +296,6 @@ ipcMain.handle("get-repo-contribution-week", () => {
         JOIN repos r ON drs.repo_id = r.id
         WHERE drs.date_yyyy_mm_dd BETWEEN ? AND ?
         GROUP BY r.name
-        HAVING edits > 0
         ORDER BY edits DESC;
       `
 			)

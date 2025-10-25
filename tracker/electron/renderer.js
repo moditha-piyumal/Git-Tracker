@@ -123,6 +123,7 @@ let dailyEditsChart = null; // keep a reference so we can destroy/redraw if need
 let commitsChart = null;
 let netLinesChart = null;
 let repoPieChart = null;
+let repoWeekChart = null; // weekly repo doughnut
 let runTimelineChart = null;
 
 // Load dashboard data on startup
