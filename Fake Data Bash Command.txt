@@ -1,0 +1,1 @@
+GIT_TRACKER_DB_PATH="$(pwd)/tracker/data/demo_history.db" npx electron ./tracker/electron/main.js

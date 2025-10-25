@@ -5,7 +5,11 @@ const { spawn } = require("child_process");
 
 // ✅ Use Electron’s local build of better-sqlite3
 const Database = require("../../electron_modules/node_modules/better-sqlite3");
-const dbPath = path.join(__dirname, "..", "data", "gittracker.db");
+// Allow overriding the DB path for testing (e.g., seeded demo DB)
+const defaultDbPath = path.join(__dirname, "..", "data", "gittracker.db");
+const dbPath = process.env.GIT_TRACKER_DB_PATH || defaultDbPath;
+console.log("[DB PATH]", dbPath);
+
 // --- History window reference ---
 let historyWin = null;
 

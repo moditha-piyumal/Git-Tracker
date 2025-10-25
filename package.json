@@ -4,7 +4,9 @@
 	"main": "index.js",
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1",
-		"migrate": "node tracker/db/migrate.js"
+		"migrate": "node tracker/db/migrate.js",
+		"start": "npx electron ./tracker/electron/main.js",
+		"start:demo": "GIT_TRACKER_DB_PATH=./tracker/data/demo_history.db npx electron ./tracker/electron/main.js"
 	},
 	"keywords": [],
 	"author": "",
@@ -15,6 +17,7 @@
 	},
 	"devDependencies": {
 		"electron": "^38.3.0",
-		"electron-rebuild": "^3.2.9"
+		"electron-rebuild": "^3.2.9",
+		"minimist": "^1.2.8"
 	}
 }
