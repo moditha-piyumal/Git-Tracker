@@ -17,7 +17,14 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 12px;
             margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
         }
 
         button {
@@ -55,25 +62,25 @@
 <body>
     <header>
         <h2>📜 Full Coding History</h2>
-        <button id="closeBtn">Close</button>
-        <button id="resetZoomBtn">Reset Zoom</button>
-
+        <div class="actions">
+            <button id="resetZoomBtn">Reset Zoom</button>
+            <button id="closeBtn">Close</button>
+        </div>
     </header>
 
     <p style="opacity:.8;margin-top:-10px;margin-bottom:16px;">
-        This window will later show your entire Git-Tracker journey.
-        Scroll and zoom to explore past activity once charts are added.
+        Zoom with the mouse wheel or pinch. Click and drag horizontally to pan through time.
     </p>
 
     <div class="chart-wrap">
         <canvas id="historyChart"></canvas>
     </div>
+
+    <!-- Chart.js 4 + Zoom plugin 2 (CDN UMD builds) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
 
     <script src="historyRenderer.js"></script>
-
-
 </body>
 
 </html>

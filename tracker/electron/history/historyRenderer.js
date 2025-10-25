@@ -1,14 +1,13 @@
 const { ipcRenderer } = require("electron");
-const Zoom = window.ChartZoom; // correct global from CDN
-Chart.register(Zoom);
 
-const ZoomPlugin = window.ChartZoom; // ✅ correct global from CDN
-Chart.register(ZoomPlugin); // ✅ register with Chart.js
-console.log("Zoom plugin registered:", Chart.registry.plugins.get("zoom"));
+// Register zoom plugin (CDN exposes window.ChartZoom)
+Chart.register(window.ChartZoom);
 
-// 🧠 Step 1 — Fetch full history
+// Electron sometimes prefers mouse events for pan — set before chart creation
+Chart.defaults.plugins.zoom.pan.events = ["mousedown", "mousemove", "mouseup"];
+
 async function loadHistory() {
-	console.log("Loading full history data...");
+	// 1) Fetch full series
 	const res = await ipcRenderer.invoke("get-all-daily-edits");
 	if (!res.ok) {
 		document.body.insertAdjacentHTML(
@@ -17,9 +16,8 @@ async function loadHistory() {
 		);
 		return;
 	}
-
-	const rows = res.rows;
-	if (!rows || !rows.length) {
+	const rows = res.rows || [];
+	if (!rows.length) {
 		document.body.insertAdjacentHTML(
 			"beforeend",
 			`<p style="color:orange;">No data found in daily_totals.</p>`
@@ -27,27 +25,20 @@ async function loadHistory() {
 		return;
 	}
 
-	console.log(`Loaded ${rows.length} days of data`);
+	// Keep original date strings for tooltips
+	const dates = rows.map((r) => r.date);
 
-	const labels = rows.map((_, i) => i); // numeric index for x-axis
+	// Use linear X with explicit {x, y} points so pan/zoom works smoothly
+	const added = rows.map((r, i) => ({ x: i, y: r.added }));
+	const removed = rows.map((r, i) => ({ x: i, y: r.removed }));
+	const edits = rows.map((r, i) => ({ x: i, y: r.edits }));
 
-	const added = rows.map((r) => r.added);
-	const removed = rows.map((r) => r.removed);
-	const edits = rows.map((r) => r.edits);
-
-	// 🧠 Step 2 — Draw chart
 	const ctx = document.getElementById("historyChart").getContext("2d");
-	// ✅ Force the zoom plugin to listen to standard mouse events
-	Chart.defaults.plugins.zoom.pan.events = [
-		"mousedown",
-		"mousemove",
-		"mouseup",
-	];
 
 	const chart = new Chart(ctx, {
 		type: "line",
 		data: {
-			labels,
+			// labels are optional when using {x,y} points; tooltips use parsed.x
 			datasets: [
 				{
 					label: "Lines Added",
@@ -81,9 +72,10 @@ async function loadHistory() {
 		options: {
 			responsive: true,
 			maintainAspectRatio: false,
+			parsing: false, // we already provide {x,y}
 			scales: {
 				x: {
-					type: "linear", // ✅ switch from category to linear
+					type: "linear",
 					title: { display: true, text: "Day Index", color: "#ccc" },
 					ticks: { color: "#aaa" },
 				},
@@ -93,64 +85,80 @@ async function loadHistory() {
 				},
 			},
 			plugins: {
-				legend: { labels: { color: "#ddd" } },
+				legend: { labels: { color: "#ddd", font: { size: 13 } } },
+				tooltip: {
+					callbacks: {
+						// Show original ISO date in tooltip header
+						title: (items) => {
+							const x = Math.round(items[0].parsed.x);
+							return dates[x] ?? "";
+						},
+					},
+				},
 				zoom: {
 					pan: {
 						enabled: true,
-						mode: "x",
-						overScaleMode: "x",
-						scaleMode: "x",
-						onPanStart: () => console.log("Panning…"),
+						mode: "x", // horizontal pan
 					},
 					zoom: {
 						wheel: { enabled: true },
 						pinch: { enabled: true },
-						mode: "x",
+						mode: "x", // horizontal zoom
 					},
 				},
 			},
 		},
 	});
-	// 🧠 manually handle horizontal dragging
+
+	// Manual horizontal pan (reliable in Electron) — keeps your preferred UX
 	let isDragging = false;
-	let startX = 0;
+	let lastX = 0;
 
 	chart.canvas.addEventListener("mousedown", (e) => {
 		isDragging = true;
-		startX = e.offsetX;
+		lastX = e.offsetX;
 	});
-
 	chart.canvas.addEventListener("mouseup", () => {
+		isDragging = false;
+	});
+	chart.canvas.addEventListener("mouseleave", () => {
 		isDragging = false;
 	});
 
 	chart.canvas.addEventListener("mousemove", (e) => {
-		if (!isDragging || !chart.scales.x) return;
+		if (!isDragging) return;
 		const scale = chart.scales.x;
-		const deltaX = e.offsetX - startX;
-		startX = e.offsetX;
+		if (!scale) return;
 
-		const range = scale.max - scale.min;
-		const pixelsPerUnit = chart.width / range;
-		const shift = deltaX / pixelsPerUnit;
+		const prevPixel = lastX;
+		const currPixel = e.offsetX;
+		lastX = currPixel;
 
-		scale.options.min -= shift;
-		scale.options.max -= shift;
+		// Convert pixel delta to domain units using scale mapping
+		const prevVal = scale.getValueForPixel(prevPixel);
+		const currVal = scale.getValueForPixel(currPixel);
+		const shift = currVal - prevVal; // positive when dragging right
+
+		// Move the visible window
+		const min = (scale.options.min ?? scale.min) - shift;
+		const max = (scale.options.max ?? scale.max) - shift;
+		scale.options.min = min;
+		scale.options.max = max;
 		chart.update("none");
 	});
+
+	// Reset Zoom: reset plugin AND our manual min/max window
+	document.getElementById("resetZoomBtn").addEventListener("click", () => {
+		chart.resetZoom();
+		chart.options.scales.x.min = undefined;
+		chart.options.scales.x.max = undefined;
+		chart.update();
+	});
+
+	// Close button
+	document
+		.getElementById("closeBtn")
+		.addEventListener("click", () => window.close());
 }
-// 🧪 TEMP TEST — check if pointer events reach the canvas
-const chartCanvas = document.getElementById("historyChart");
-chartCanvas.onpointerdown = () => console.log("pointerdown fired");
 
 window.addEventListener("DOMContentLoaded", loadHistory);
-
-// Close button
-document
-	.getElementById("closeBtn")
-	.addEventListener("click", () => window.close());
-
-document.getElementById("resetZoomBtn").addEventListener("click", () => {
-	const chart = Chart.getChart("historyChart");
-	chart.resetZoom();
-});
