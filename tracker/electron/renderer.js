@@ -398,6 +398,13 @@ async function renderNetLinesChart() {
 		},
 	});
 }
+/*  💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠
+    📊  RELEVANT TO: DAILY REPO CONTRIBUTION CHART (Today)
+    ⚙️  Function: renderRepoPieChart()
+    🔗  Fetches: ipcRenderer.invoke("get-repo-contribution")
+    🧮  Draws: Doughnut chart in <canvas id="repoPieChart">
+    💬  Any edit in this block changes how the daily repo chart renders.
+    💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠💠  */
 
 async function renderRepoPieChart() {
 	console.log(
@@ -467,6 +474,20 @@ async function renderRepoPieChart() {
 		},
 	});
 }
+/*  💠💠💠💠💠💠💠💠💠💠💠💠💠💠 END OF "REPO CONTRIBUTION CHART — Today" 💠💠💠💠💠💠💠💠💠💠💠💠💠💠  */
+/*  🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷
+    📊  RELEVANT TO: WEEKLY REPO CONTRIBUTION CHART (Last 7 Days)
+    ⚙️  Function: renderRepoWeekChart()
+    🔗  Fetches: ipcRenderer.invoke("get-repo-contribution-week")
+    🧮  Draws: Doughnut chart in <canvas id="repoChartWeek">
+    🗓️  Time Range: Aggregates last 7 days (today + previous 6)
+    💬  This block determines how the weekly repo chart appears.
+        - Uses same palette as daily chart (makePalette()).
+        - Shares tooltip and legend styling with daily chart.
+        - Aggregated data comes from the main.js IPC handler.
+    🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷  */
+
+/*  💠💠💠💠💠💠💠💠💠💠💠💠💠💠 END OF "REPO CONTRIBUTION CHART — Weekly" 💠💠💠💠💠💠💠💠💠💠💠💠💠💠  */
 async function renderRunTimelineChart() {
 	console.log(
 		"Rendering run timeline chart at",
@@ -604,6 +625,6 @@ loadDashboardData();
 renderDailyEdits();
 renderCommitsChart();
 renderNetLinesChart();
-renderRepoPieChart();
+renderRepoPieChart(); // 💠💠💠 RELEVANT TO DAILY REPO CONTRIBUTION CHART 💠💠💠
 renderRunTimelineChart();
 renderStreak();
