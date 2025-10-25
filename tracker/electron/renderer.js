@@ -429,7 +429,7 @@ async function renderRepoPieChart() {
 	// 3️⃣ Draw the chart
 	const ctx = document.getElementById("repoPieChart").getContext("2d");
 	repoPieChart = new Chart(ctx, {
-		type: "pie",
+		type: "doughnut",
 		data: {
 			labels,
 			datasets: [
@@ -443,6 +443,7 @@ async function renderRepoPieChart() {
 		options: {
 			responsive: true,
 			maintainAspectRatio: false,
+			cutout: "40%", // doughnut thickness
 			plugins: {
 				legend: {
 					position: "right",

@@ -61,3 +61,6 @@ CREATE INDEX IF NOT EXISTS idx_daily_repo_stats_repo
 
 db.exec(schema);
 console.log("✅ Database ready: tables ensured.");
+
+db.close();
+console.log("✅ Migration complete. Database closed.");
