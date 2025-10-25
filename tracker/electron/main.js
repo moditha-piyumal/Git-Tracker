@@ -474,5 +474,31 @@ ipcMain.on("open-history-window", () => {
 });
 // ----------------------------------------------------
 
+// ----------------------------------------------------
+// 🧠 IPC: Get ALL daily totals (for historical view)
+// ----------------------------------------------------
+ipcMain.handle("get-all-daily-edits", () => {
+	try {
+		const db = new Database(dbPath, { readonly: true });
+		const rows = db
+			.prepare(
+				`
+				SELECT date_yyyy_mm_dd AS date,
+					   insertions AS added,
+					   deletions AS removed,
+					   edits,
+					   commits
+				FROM daily_totals
+				ORDER BY date_yyyy_mm_dd ASC;
+			`
+			)
+			.all();
+		db.close();
+		return { ok: true, rows };
+	} catch (err) {
+		return { ok: false, message: err.message };
+	}
+});
+
 app.whenReady().then(createWindow);
 app.on("window-all-closed", () => app.quit());

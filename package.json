@@ -5,15 +5,16 @@
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1",
 		"migrate": "node tracker/db/migrate.js",
-		"start": "npx electron ./tracker/electron/main.js",
-		"start:demo": "GIT_TRACKER_DB_PATH=./tracker/data/demo_history.db npx electron ./tracker/electron/main.js"
+		"start": "npx electron ./tracker/electron/main.js"
 	},
 	"keywords": [],
 	"author": "",
 	"license": "ISC",
 	"description": "",
 	"dependencies": {
-		"better-sqlite3": "^12.4.1"
+		"better-sqlite3": "^12.4.1",
+		"chart.js": "^4.4.1",
+		"chartjs-plugin-zoom": "^2.0.1"
 	},
 	"devDependencies": {
 		"electron": "^38.3.0",
