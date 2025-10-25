@@ -126,6 +126,18 @@ let repoPieChart = null;
 let repoWeekChart = null; // weekly repo doughnut
 let runTimelineChart = null;
 
+// 🎨 Deterministic color generator — ensures same color for same repo name
+function getColorForRepo(repoName) {
+	// Simple hash from string → hue
+	let hash = 0;
+	for (let i = 0; i < repoName.length; i++) {
+		hash = repoName.charCodeAt(i) + ((hash << 5) - hash);
+	}
+	const hue = Math.abs(hash) % 360; // hue 0–359
+	return `hsl(${hue}, 65%, 55%)`; // pleasant mid-saturation color
+}
+// The above code is just cosmetic
+
 // Load dashboard data on startup
 async function loadDashboardData() {
 	const data = await ipcRenderer.invoke("get-dashboard-data");
@@ -201,39 +213,49 @@ async function renderDailyEdits() {
 				{
 					label: "Lines Added",
 					data: added,
-					borderWidth: 1.5,
+					borderColor: "#4caf50", // light green
+					borderWidth: 2.0,
 					tension: 0.25,
 					pointRadius: 0,
+					fill: false,
 				},
 				{
 					label: "Lines Removed",
 					data: removed,
+					borderColor: "#ef5350", // light red
 					borderWidth: 1.5,
 					tension: 0.25,
 					pointRadius: 0,
+					fill: false,
 				},
 				{
 					label: "Total Edits (Adds + Removes)",
 					data: edits,
+					borderColor: "#00bcd4", // light blue
 					borderWidth: 3, // thicker line for Total
 					tension: 0.25,
 					pointRadius: 0,
+					fill: false,
 				},
 				{
 					label: "7-day MA (Total Edits)",
 					data: ma7,
+					borderColor: "#eee0dfff", // red
 					borderWidth: 1.5,
-					borderDash: [6, 6], // dashed so it’s visually distinct
+					borderDash: [5, 7], // dashed for distinction
 					tension: 0.25,
 					pointRadius: 0,
+					fill: false,
 				},
 				{
 					label: "30-day MA (Total Edits)",
 					data: ma30,
+					borderColor: "#ff9800", // orange
 					borderWidth: 1.5,
-					borderDash: [3, 6],
+					borderDash: [3, 2],
 					tension: 0.25,
 					pointRadius: 0,
+					fill: false,
 				},
 			],
 		},
@@ -305,7 +327,10 @@ async function renderCommitsChart() {
 				{
 					label: "Commits per Day",
 					data: commits,
-					borderWidth: 2.5,
+					borderWidth: 4.5,
+					borderColor: "#ff79c6",
+					backgroundColor: "rgba(255, 121, 198, 0.2)", // semi-transparent fill
+					fill: true,
 					tension: 0.3, // gentle curve
 					pointRadius: 3,
 					pointHoverRadius: 5,
@@ -317,11 +342,11 @@ async function renderCommitsChart() {
 			maintainAspectRatio: false,
 			scales: {
 				x: {
-					ticks: { color: "#bbb", autoSkip: true },
+					ticks: { color: "#f7ececff", autoSkip: true },
 					grid: { color: "rgba(255,255,255,0.06)" },
 				},
 				y: {
-					ticks: { color: "#bbb" },
+					ticks: { color: "#f7ececff" },
 					grid: { color: "rgba(255,255,255,0.06)" },
 					beginAtZero: true,
 				},
@@ -445,6 +470,7 @@ async function renderRepoPieChart() {
 				{
 					label: `Edits (${date})`,
 					data: values,
+					backgroundColor: labels.map((name) => getColorForRepo(name)),
 					borderWidth: 1,
 				},
 			],
@@ -524,6 +550,7 @@ async function renderRepoWeekChart() {
 				{
 					label: `Edits (${startDate} → ${endDate})`,
 					data: values,
+					backgroundColor: labels.map((name) => getColorForRepo(name)),
 					borderWidth: 1,
 				},
 			],
