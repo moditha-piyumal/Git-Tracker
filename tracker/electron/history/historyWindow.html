@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Git-Tracker — Full History</title>
+    <style>
+        body {
+            background: #1e1e1e;
+            color: #eee;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background: #4caf50;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 4px;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #43a047;
+        }
+
+        .chart-wrap {
+            position: relative;
+            height: 600px;
+            width: 100%;
+            background: #222;
+            border-radius: 8px;
+            padding: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h2>📜 Full Coding History</h2>
+        <button id="closeBtn">Close</button>
+    </header>
+
+    <p style="opacity:.8;margin-top:-10px;margin-bottom:16px;">
+        This window will later show your entire Git-Tracker journey.
+        Scroll and zoom to explore past activity once charts are added.
+    </p>
+
+    <div class="chart-wrap">
+        <canvas id="historyChart"></canvas>
+    </div>
+
+    <script src="historyRenderer.js"></script>
+</body>
+
+</html>

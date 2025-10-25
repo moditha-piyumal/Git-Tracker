@@ -6,6 +6,8 @@ const { spawn } = require("child_process");
 // ✅ Use Electron’s local build of better-sqlite3
 const Database = require("../../electron_modules/node_modules/better-sqlite3");
 const dbPath = path.join(__dirname, "..", "data", "gittracker.db");
+// --- History window reference ---
+let historyWin = null;
 
 // Compute a simple moving average over an array of numbers.
 // windowSize=7 → 7-day MA; windowSize=30 → 30-day MA
@@ -33,6 +35,34 @@ function createWindow() {
 	});
 
 	win.loadFile(path.join(__dirname, "dashboard.html"));
+}
+
+// ----------------------------------------------------
+// 🪟 Factory: History Window (Full Journey View)
+// ----------------------------------------------------
+function createHistoryWindow() {
+	if (historyWin && !historyWin.isDestroyed()) {
+		historyWin.focus();
+		return;
+	}
+
+	historyWin = new BrowserWindow({
+		width: 1200,
+		height: 800,
+		backgroundColor: "#1e1e1e",
+		webPreferences: {
+			nodeIntegration: true,
+			contextIsolation: false,
+		},
+		title: "Git-Tracker — Full History",
+	});
+
+	// NOTE: We will add this file in the next step.
+	historyWin.loadFile(path.join(__dirname, "history", "historyWindow.html"));
+
+	historyWin.on("closed", () => {
+		historyWin = null;
+	});
 }
 
 // ----------------------------------------------------
@@ -431,6 +461,14 @@ ipcMain.handle("run-tracker-now", () => {
 	}).unref();
 	return { started: true };
 });
+
+// ----------------------------------------------------
+// 🧠 IPC: Open History Window
+// Opens the full-history window on demand
+ipcMain.on("open-history-window", () => {
+	createHistoryWindow();
+});
+// ----------------------------------------------------
 
 app.whenReady().then(createWindow);
 app.on("window-all-closed", () => app.quit());

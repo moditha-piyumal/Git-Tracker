@@ -6,6 +6,8 @@ const { ipcRenderer } = require("electron");
 const banner = document.getElementById("statusBanner");
 const summary = document.getElementById("summary");
 const runBtn = document.getElementById("runBtn");
+const openHistoryBtn = document.getElementById("openHistoryBtn");
+
 const loadingOverlay = document.getElementById("loadingOverlay");
 const motivationMessage = document.getElementById("motivationMessage");
 
@@ -180,6 +182,10 @@ runBtn.addEventListener("click", async () => {
 		loadingOverlay.style.display = "none";
 	}, 5000);
 });
+openHistoryBtn.addEventListener("click", () => {
+	ipcRenderer.send("open-history-window");
+});
+
 async function renderDailyEdits() {
 	console.log(
 		"Rendering daily edits chart at",
