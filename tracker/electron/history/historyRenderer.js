@@ -17,6 +17,14 @@ async function loadHistory() {
 		return;
 	}
 	const rows = res.rows || [];
+	rows.forEach((r) => {
+		r.added = Number(r.added);
+		r.removed = Number(r.removed);
+		r.edits = Number(r.edits);
+	});
+
+	console.log("Sample DB rows:", rows.slice(0, 5));
+
 	if (!rows.length) {
 		document.body.insertAdjacentHTML(
 			"beforeend",
@@ -29,9 +37,22 @@ async function loadHistory() {
 	const dates = rows.map((r) => r.date);
 
 	// Use linear X with explicit {x, y} points so pan/zoom works smoothly
-	const added = rows.map((r, i) => ({ x: i, y: r.added }));
-	const removed = rows.map((r, i) => ({ x: i, y: r.removed }));
-	const edits = rows.map((r, i) => ({ x: i, y: r.edits }));
+	const added = rows.map((r) => ({
+		x: new Date(r.date).getTime(),
+		y: r.added,
+	}));
+	const removed = rows.map((r) => ({
+		x: new Date(r.date).getTime(),
+		y: r.removed,
+	}));
+	const edits = rows.map((r) => ({
+		x: new Date(r.date).getTime(),
+		y: r.edits,
+	}));
+
+	console.log("First few edits points:", edits.slice(0, 10));
+
+	console.log("Sample dataset points:", edits.slice(0, 5));
 
 	const ctx = document.getElementById("historyChart").getContext("2d");
 
@@ -75,10 +96,19 @@ async function loadHistory() {
 			parsing: false, // we already provide {x,y}
 			scales: {
 				x: {
-					type: "linear",
-					title: { display: true, text: "Day Index", color: "#ccc" },
-					ticks: { color: "#aaa" },
+					type: "time",
+					time: {
+						parser: "yyyy-MM-dd",
+						unit: "day",
+						tooltipFormat: "yyyy-MM-dd",
+						displayFormats: { day: "LL-dd" },
+					},
+					min: new Date(rows[0].date).getTime(),
+					max: new Date(rows[rows.length - 1].date).getTime(),
+					title: { display: true, text: "Date", color: "#ccc" },
+					ticks: { color: "#aaa", maxRotation: 0, autoSkip: true },
 				},
+
 				y: {
 					title: { display: true, text: "Edits", color: "#ccc" },
 					ticks: { color: "#aaa" },
