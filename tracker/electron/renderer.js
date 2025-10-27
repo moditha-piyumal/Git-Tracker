@@ -1,6 +1,8 @@
 // tracker/electron/renderer.js
 const Chart = require("../../electron_modules/node_modules/chart.js/auto");
 const { ipcRenderer } = require("electron");
+const { logUIError } = require("./modules/uiLogger"); // 🧪 Renderer-side error logger
+
 require("./modules/signatureBanner");
 
 // ✅ GLOBAL LEGEND TOGGLE ENABLEMENT
@@ -26,6 +28,23 @@ Chart.defaults.plugins.legend.onClick = function (evt, legendItem, legend) {
 	meta.hidden = meta.hidden === null ? true : null;
 	chart.update();
 };
+// 🧩 GLOBAL RENDERER ERROR LISTENERS
+window.addEventListener("error", (e) => {
+	console.log("[UI-LOG] window.onerror captured:", e.message);
+	logUIError(e.message, {
+		filename: e.filename,
+		line: e.lineno,
+		column: e.colno,
+		stack: e.error?.stack || null,
+	});
+});
+
+window.addEventListener("unhandledrejection", (e) => {
+	console.log("[UI-LOG] unhandledrejection captured");
+	logUIError("Unhandled Promise rejection", {
+		reason: e.reason?.stack || e.reason || "Unknown reason",
+	});
+});
 
 // -------------------------------------------------------------
 
@@ -166,13 +185,19 @@ function getColorForRepo(repoName) {
 
 // Load dashboard data on startup
 async function loadDashboardData() {
-	const data = await ipcRenderer.invoke("get-dashboard-data");
-	if (data.ok) {
-		banner.textContent = data.message;
-		summary.textContent = `📅 Total Days Tracked: ${data.totalDays}`;
-	} else {
-		banner.textContent = `⚠️ ${data.message}`;
-		summary.textContent = "";
+	try {
+		const data = await ipcRenderer.invoke("get-dashboard-data");
+		if (data.ok) {
+			banner.textContent = data.message;
+			summary.textContent = `📅 Total Days Tracked: ${data.totalDays}`;
+		} else {
+			banner.textContent = `⚠️ ${data.message}`;
+			summary.textContent = "";
+		}
+	} catch (err) {
+		console.log("[UI-LOG] loadDashboardData failed:", err.message);
+		logUIError("loadDashboardData failed", { stack: err.stack });
+		banner.textContent = "⚠️ Failed to load dashboard data.";
 	}
 }
 
