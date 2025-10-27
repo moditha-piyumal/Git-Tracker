@@ -1,7 +1,32 @@
 // tracker/electron/renderer.js
 const Chart = require("../../electron_modules/node_modules/chart.js/auto");
-
 const { ipcRenderer } = require("electron");
+
+// ✅ GLOBAL LEGEND TOGGLE ENABLEMENT
+// -------------------------------------------------------------
+// Chart.js already supports clicking legend items to hide/show
+// datasets by default. However, depending on plugin order or
+// how charts are initialized, that behavior may appear disabled.
+//
+// The line below enforces the toggle behavior globally so all
+// charts — Daily Edits, Commits, Net Lines, Pie, etc. — respond
+// consistently to legend clicks.
+//
+// 🧠 Why this matters:
+// In October 2025, we noticed enabling toggles for the Daily
+// Edits chart also reactivated toggling for other charts. To
+// prevent confusion in future versions, this global default
+// makes that behavior explicit and reliable.
+//
+Chart.defaults.plugins.legend.onClick = function (evt, legendItem, legend) {
+	const index = legendItem.datasetIndex;
+	const chart = legend.chart;
+	const meta = chart.getDatasetMeta(index);
+	meta.hidden = meta.hidden === null ? true : null;
+	chart.update();
+};
+
+// -------------------------------------------------------------
 
 const banner = document.getElementById("statusBanner");
 const summary = document.getElementById("summary");
@@ -121,24 +146,22 @@ const motivationalQuotes = [
 	"Code today, rise tomorrow — the realm remembers consistency. 🏰",
 ];
 
-let dailyEditsChart = null; // keep a reference so we can destroy/redraw if needed
+let dailyEditsChart = null;
 let commitsChart = null;
 let netLinesChart = null;
 let repoPieChart = null;
-let repoWeekChart = null; // weekly repo doughnut
+let repoWeekChart = null;
 let runTimelineChart = null;
 
 // 🎨 Deterministic color generator — ensures same color for same repo name
 function getColorForRepo(repoName) {
-	// Simple hash from string → hue
 	let hash = 0;
 	for (let i = 0; i < repoName.length; i++) {
 		hash = repoName.charCodeAt(i) + ((hash << 5) - hash);
 	}
-	const hue = Math.abs(hash) % 360; // hue 0–359
-	return `hsl(${hue}, 65%, 55%)`; // pleasant mid-saturation color
+	const hue = Math.abs(hash) % 360;
+	return `hsl(${hue}, 65%, 55%)`;
 }
-// The above code is just cosmetic
 
 // Load dashboard data on startup
 async function loadDashboardData() {
@@ -156,18 +179,13 @@ function showRandomMotivation() {
 	const randomIndex = Math.floor(Math.random() * motivationalQuotes.length);
 	motivationMessage.textContent = motivationalQuotes[randomIndex];
 }
-
 showRandomMotivation();
 
 runBtn.addEventListener("click", async () => {
-	// 🌀 Show spinner overlay
 	loadingOverlay.style.display = "flex";
-
 	runBtn.disabled = true;
 	banner.textContent = "⏳ Running tracker…";
 	await ipcRenderer.invoke("run-tracker-now");
-
-	// wait 5 s, then refresh everything once
 	setTimeout(async () => {
 		await loadDashboardData();
 		await renderDailyEdits();
@@ -178,39 +196,34 @@ runBtn.addEventListener("click", async () => {
 		await renderRunTimelineChart();
 		await renderStreak();
 		runBtn.disabled = false;
-		// ✅ Hide spinner overlay
 		loadingOverlay.style.display = "none";
 	}, 5000);
 });
+
 openHistoryBtn.addEventListener("click", () => {
 	ipcRenderer.send("open-history-window");
 });
 
+// -------------------------------------------------------------
+// 🟢 DAILY EDITS CHART
+// -------------------------------------------------------------
 async function renderDailyEdits() {
 	console.log(
 		"Rendering daily edits chart at",
 		new Date().toLocaleTimeString()
 	);
 
-	// destroy old chart if it exists before drawing again
-	if (dailyEditsChart) {
-		dailyEditsChart.destroy();
-		dailyEditsChart = null;
-	}
+	if (dailyEditsChart) dailyEditsChart.destroy();
 
-	// 1) Ask main process for data (last 120 days)
 	const res = await ipcRenderer.invoke("get-daily-edits", { days: 120 });
-
-	// 2) Handle errors
 	if (!res.ok) {
 		summary.textContent = res.message || "Failed to load chart data.";
 		return;
 	}
 
 	const { labels, added, removed, edits, ma7, ma30 } = res;
-
-	// 4) Create the chart
 	const ctx = document.getElementById("dailyEditsChart").getContext("2d");
+
 	dailyEditsChart = new Chart(ctx, {
 		type: "line",
 		data: {
@@ -219,8 +232,8 @@ async function renderDailyEdits() {
 				{
 					label: "Lines Added",
 					data: added,
-					borderColor: "#4caf50", // light green
-					borderWidth: 2.0,
+					borderColor: "#4caf50",
+					borderWidth: 2,
 					tension: 0.25,
 					pointRadius: 0,
 					fill: false,
@@ -228,7 +241,7 @@ async function renderDailyEdits() {
 				{
 					label: "Lines Removed",
 					data: removed,
-					borderColor: "#ef5350", // light red
+					borderColor: "#ef5350",
 					borderWidth: 1.5,
 					tension: 0.25,
 					pointRadius: 0,
@@ -237,8 +250,8 @@ async function renderDailyEdits() {
 				{
 					label: "Total Edits (Adds + Removes)",
 					data: edits,
-					borderColor: "#00bcd4", // light blue
-					borderWidth: 3, // thicker line for Total
+					borderColor: "#00bcd4",
+					borderWidth: 3,
 					tension: 0.25,
 					pointRadius: 0,
 					fill: false,
@@ -246,9 +259,9 @@ async function renderDailyEdits() {
 				{
 					label: "7-day MA (Total Edits)",
 					data: ma7,
-					borderColor: "#eee0dfff", // red
+					borderColor: "#eee0df",
 					borderWidth: 1.5,
-					borderDash: [5, 7], // dashed for distinction
+					borderDash: [5, 7],
 					tension: 0.25,
 					pointRadius: 0,
 					fill: false,
@@ -256,7 +269,7 @@ async function renderDailyEdits() {
 				{
 					label: "30-day MA (Total Edits)",
 					data: ma30,
-					borderColor: "#ff9800", // orange
+					borderColor: "#ff9800",
 					borderWidth: 1.5,
 					borderDash: [3, 2],
 					tension: 0.25,
@@ -283,21 +296,9 @@ async function renderDailyEdits() {
 				legend: {
 					labels: { color: "#ddd", usePointStyle: true },
 				},
-				tooltip: {
-					mode: "index",
-					intersect: false,
-				},
+				tooltip: { mode: "index", intersect: false },
 			},
-			interaction: {
-				mode: "index",
-				intersect: false,
-			},
-			elements: {
-				line: {
-					// we don’t set explicit colors; Chart.js will auto-pick.
-					// (If you want custom colors later, we can add them.)
-				},
-			},
+			interaction: { mode: "index", intersect: false },
 		},
 	});
 }
@@ -719,12 +720,14 @@ async function renderStreak() {
 	}
 }
 
-// Initial load
+// -------------------------------------------------------------
+// FINAL INITIALIZATION
+// -------------------------------------------------------------
 loadDashboardData();
 renderDailyEdits();
 renderCommitsChart();
 renderNetLinesChart();
-renderRepoPieChart(); // 💠💠💠 RELEVANT TO DAILY REPO CONTRIBUTION CHART 💠💠💠
-renderRepoWeekChart(); // 💠💠💠 RELEVANT TO WEEKLY REPO CONTRIBUTION CHART 💠💠💠
+renderRepoPieChart();
+renderRepoWeekChart();
 renderRunTimelineChart();
 renderStreak();

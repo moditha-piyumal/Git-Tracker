@@ -47,9 +47,16 @@
 <body>
     <header>
         <div id="statusBanner">Loading status…</div>
+        <p id="lastRunInfo" class="muted"></p> <!-- 👈 New line -->
         <div>
-            <button id="openHistoryBtn">🕰️ View Full History</button>
-            <button id="runBtn">Run Tracker Now</button>
+            <button id="runBtn" title="Run the tracker manually to log today's activity.">
+                Run Tracker Now
+            </button>
+
+            <button id="openHistoryBtn" title="Open full contribution history with zoomable chart.">
+                View Full History
+            </button>
+
         </div>
     </header>
 
