@@ -1,4 +1,5 @@
 const { ipcRenderer } = require("electron");
+require("../modules/signatureBanner");
 
 // Register zoom plugin (CDN exposes window.ChartZoom)
 Chart.register(window.ChartZoom);

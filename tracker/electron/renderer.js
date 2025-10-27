@@ -1,6 +1,7 @@
 // tracker/electron/renderer.js
 const Chart = require("../../electron_modules/node_modules/chart.js/auto");
 const { ipcRenderer } = require("electron");
+require("./modules/signatureBanner");
 
 // ✅ GLOBAL LEGEND TOGGLE ENABLEMENT
 // -------------------------------------------------------------

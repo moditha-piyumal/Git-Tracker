@@ -1,5 +1,6 @@
 // tracker/verifyWindow.js
 const { ipcRenderer, shell } = require("electron");
+require("../electron/modules/signatureBanner");
 
 // Listen for health data from the main process
 ipcRenderer.on("health-data", (_, health) => {
