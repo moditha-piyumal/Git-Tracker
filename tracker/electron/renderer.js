@@ -180,24 +180,35 @@ function showRandomMotivation() {
 	motivationMessage.textContent = motivationalQuotes[randomIndex];
 }
 showRandomMotivation();
-
 runBtn.addEventListener("click", async () => {
 	loadingOverlay.style.display = "flex";
 	runBtn.disabled = true;
 	banner.textContent = "⏳ Running tracker…";
-	await ipcRenderer.invoke("run-tracker-now");
-	setTimeout(async () => {
-		await loadDashboardData();
-		await renderDailyEdits();
-		await renderCommitsChart();
-		await renderNetLinesChart();
-		await renderRepoPieChart();
-		await renderRepoWeekChart();
-		await renderRunTimelineChart();
-		await renderStreak();
+
+	try {
+		// Run the tracker
+		await ipcRenderer.invoke("run-tracker-now");
+
+		// Wait briefly, then refresh everything
+		setTimeout(async () => {
+			await loadDashboardData();
+			await renderDailyEdits();
+			await renderCommitsChart();
+			await renderNetLinesChart();
+			await renderRepoPieChart();
+			await renderRepoWeekChart();
+			await renderRunTimelineChart();
+			await renderStreak();
+
+			runBtn.disabled = false;
+			loadingOverlay.style.display = "none";
+		}, 4000);
+	} catch (err) {
+		console.error("Tracker run error:", err);
+		banner.textContent = "⚠️ Run failed. Check logs for details.";
 		runBtn.disabled = false;
 		loadingOverlay.style.display = "none";
-	}, 5000);
+	}
 });
 
 openHistoryBtn.addEventListener("click", () => {
