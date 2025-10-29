@@ -1,11 +1,167 @@
 const { ipcRenderer } = require("electron");
 require("../modules/signatureBanner");
+const fs = require("fs");
+const path = require("path");
+
+// 🏅 Cumulative Net LOC badge milestones
+const BADGES = [
+	{
+		threshold: 1000,
+		name: "Promising Novice",
+		emoji: "🌱",
+		desc: "Reached 1,000 net lines",
+	},
+	{
+		threshold: 2000,
+		name: "Resolute Builder",
+		emoji: "🔧",
+		desc: "Reached 2,000 net lines",
+	},
+	{
+		threshold: 5000,
+		name: "Foundation Builder",
+		emoji: "🧱",
+		desc: "Reached 5,000 net lines",
+	},
+	{
+		threshold: 10000,
+		name: "Momentum Maker",
+		emoji: "🚀",
+		desc: "Reached 10,000 net lines",
+	},
+	{
+		threshold: 20000,
+		name: "Architect of Flow",
+		emoji: "⚙️",
+		desc: "Reached 20,000 net lines",
+	},
+	{
+		threshold: 50000,
+		name: "The Furnace of Skill",
+		emoji: "🔥",
+		desc: "Reached 50,000 net lines",
+	},
+	{
+		threshold: 70000,
+		name: "Voyager of Vision",
+		emoji: "🌌",
+		desc: "Reached 70,000 net lines",
+	},
+	{
+		threshold: 90000,
+		name: "The Artisan Coder",
+		emoji: "🧠",
+		desc: "Reached 90,000 net lines",
+	},
+	{
+		threshold: 100000,
+		name: "Grandmaster of Code",
+		emoji: "🏆",
+		desc: "Reached 100,000 net lines",
+	},
+	{
+		threshold: 150000,
+		name: "Forever Fighter",
+		emoji: "⚔️",
+		desc: "Reached 150,000 net lines",
+	},
+	{
+		threshold: 200000,
+		name: "The Eternal Builder",
+		emoji: "💀",
+		desc: "Reached 200,000 net lines",
+	},
+];
+
+// Local persistence for unlocked badges
+const DATA_DIR = path.join(__dirname, "..", "data");
+const BADGES_FILE = path.join(DATA_DIR, "unlocked_badges.json");
 
 // Register zoom plugin (CDN exposes window.ChartZoom)
 Chart.register(window.ChartZoom);
 
 // Electron sometimes prefers mouse events for pan — set before chart creation
 Chart.defaults.plugins.zoom.pan.events = ["mousedown", "mousemove", "mouseup"];
+// -------------------------------------
+function ensureDataDir() {
+	try {
+		fs.mkdirSync(DATA_DIR, { recursive: true });
+	} catch {}
+}
+
+function loadUnlockedBadges() {
+	try {
+		if (fs.existsSync(BADGES_FILE)) {
+			const raw = fs.readFileSync(BADGES_FILE, "utf8");
+			const arr = JSON.parse(raw);
+			return Array.isArray(arr) ? arr : [];
+		}
+	} catch {}
+	return [];
+}
+
+function saveUnlockedBadges(list) {
+	try {
+		ensureDataDir();
+		fs.writeFileSync(BADGES_FILE, JSON.stringify(list, null, 2), "utf8");
+	} catch (e) {
+		console.error("[badges] Failed to save unlocked badges:", e);
+	}
+}
+
+// net per day = max(0, added - removed); total = sum of daily net
+function computeTotalNetLines(rows) {
+	let total = 0;
+	for (const r of rows) {
+		const added = Number(r.added) || 0;
+		const removed = Number(r.removed) || 0;
+		const net = Math.max(0, added - removed);
+		total += net;
+	}
+	return total;
+}
+
+// Given total net LOC, return the badge names that should be unlocked
+function computeBadgeUnlocks(totalNet, alreadyUnlockedNames) {
+	const unlocked = new Set(alreadyUnlockedNames || []);
+	for (const b of BADGES) {
+		if (totalNet >= b.threshold) unlocked.add(b.name);
+	}
+	return Array.from(unlocked);
+}
+
+function renderBadges(unlockedNames, totalNet) {
+	const wrap = document.getElementById("achievementBadges");
+	const empty = document.getElementById("achievementBadgesEmpty");
+	if (!wrap) return;
+
+	// Clear previous
+	wrap.innerHTML = "";
+
+	// Map names → full badge objects (in threshold order)
+	const unlocked = BADGES.filter((b) => unlockedNames.includes(b.name));
+
+	if (!unlocked.length) {
+		if (empty) empty.style.display = "block";
+		return;
+	}
+	if (empty) empty.style.display = "none";
+
+	// Optional header-like badge showing current total
+	const totalBadge = document.createElement("div");
+	totalBadge.className = "badge";
+	totalBadge.innerHTML = `<span class="emoji">📈</span><span class="name">Total Net</span><span class="desc"> ${totalNet.toLocaleString()} lines</span>`;
+	wrap.appendChild(totalBadge);
+
+	// Add each unlocked badge pill
+	for (const b of unlocked) {
+		const el = document.createElement("div");
+		el.className = "badge";
+		el.title = `${b.desc}`;
+		el.innerHTML = `<span class="emoji">${b.emoji}</span><span class="name">${b.name}</span>`;
+		wrap.appendChild(el);
+	}
+}
 
 async function loadHistory() {
 	// 1) Fetch full series
@@ -54,6 +210,21 @@ async function loadHistory() {
 	console.log("First few edits points:", edits.slice(0, 10));
 
 	console.log("Sample dataset points:", edits.slice(0, 5));
+	// === Badges: compute & render ===
+	const totalNet = computeTotalNetLines(rows);
+	const prevUnlocked = loadUnlockedBadges(); // ["Promising Novice", ...] or []
+	const nowUnlocked = computeBadgeUnlocks(totalNet, prevUnlocked);
+
+	// Persist if new badges appeared
+	if (
+		nowUnlocked.length !== prevUnlocked.length ||
+		nowUnlocked.some((n) => !prevUnlocked.includes(n))
+	) {
+		saveUnlockedBadges(nowUnlocked);
+	}
+
+	// Render the strip
+	renderBadges(nowUnlocked, totalNet);
 
 	const ctx = document.getElementById("historyChart").getContext("2d");
 

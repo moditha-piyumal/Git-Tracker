@@ -41,20 +41,86 @@
         }
 
         .chart-wrap {
+            margin: 10px 20px 40px 20px;
             position: relative;
             height: 600px;
-            width: 100%;
-            background: #222;
+            max-height: 70vh;
+            width: calc(100% - 40px);
+            /* keep width inside window */
+            background: linear-gradient(145deg, #28422c, #041601);
+            box-shadow: inset 0 0 10px rgba(16, 235, 8, 0.6);
             border-radius: 8px;
             padding: 10px;
+            overflow-x: hidden;
+            /* 🚫 prevent horizontal scroll */
+            overflow-y: auto;
+            /* ✅ allow vertical scroll */
+            box-sizing: border-box;
+            /* prevent internal padding from expanding width */
         }
 
+
         canvas {
+            display: block;
+            width: 100% !important;
+            /* 🔒 force canvas width to parent */
+            height: auto !important;
             cursor: grab;
         }
 
         canvas:active {
             cursor: grabbing;
+        }
+
+
+        /* --- Badges strip (below chart) --- */
+        .badges-wrap {
+            margin-top: 26px;
+            margin-bottom: 60px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: #2a2a2a;
+            border: 1px solid rgba(255, 255, 255, .08);
+            color: #e6e6e6;
+            font-size: 18px;
+            line-height: 1;
+            box-shadow: 0 1px 2px rgba(241, 238, 238, 0.45);
+            transition: background .5s;
+        }
+
+        .badge:hover {
+            background: #086b0d;
+            box-shadow: 0 4px 4px rgba(243, 241, 241, 0.45);
+            cursor: pointer;
+        }
+
+        .badge .emoji {
+            font-size: 22px
+        }
+
+        .badge .name {
+            font-weight: 600
+        }
+
+        .badge .desc {
+            opacity: .75
+        }
+
+        .badges-empty {
+            margin-top: 16px;
+            margin-bottom: 30px;
+            opacity: .7;
+            font-size: 14px;
         }
     </style>
 </head>
@@ -75,6 +141,13 @@
     <div class="chart-wrap">
         <canvas id="historyChart"></canvas>
     </div>
+
+    <!-- Achievement Badges -->
+    <div id="achievementBadges" class="badges-wrap"></div>
+    <div id="achievementBadgesEmpty" class="badges-empty" style="display:none;">
+        No badges yet — keep coding! Your first milestone unlocks at 1,000 net lines. 💪
+    </div>
+
 
     <!-- Chart.js 4 + Zoom plugin 2 (CDN UMD builds) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
