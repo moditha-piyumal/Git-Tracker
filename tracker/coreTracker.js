@@ -7,6 +7,15 @@ const log = require("./utils/logger");
 const { acquireLock, releaseLock } = require("./utils/lock");
 const { dbExistsAndWritable, recentSuccess } = require("./utils/health");
 
+// 🧩 Ensure database schema exists
+try {
+	const { runMigrations } = require("./db/migrate");
+	runMigrations();
+	console.log("✅ Database checked and up-to-date.");
+} catch (err) {
+	console.error("❌ Migration failed:", err.message);
+}
+
 // STEP 0: Run the repo scanner automatically before tracking
 try {
 	console.log("🔁 Running repository scanner before tracking...");

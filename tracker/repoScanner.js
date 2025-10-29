@@ -66,7 +66,7 @@ function saveReposToDB(repoPaths) {
 // =============================
 
 // ⚠️ Change this to your actual folder path
-const MAIN_FOLDER = "C:\\Fake-Projects";
+const MAIN_FOLDER = "C:\\Moditha_DevHub\\1-Portfolio_Worthy_Projects";
 
 // 1️⃣ Find all Git repositories
 const found = findGitRepos(MAIN_FOLDER);
