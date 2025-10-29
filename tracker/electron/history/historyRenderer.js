@@ -226,6 +226,29 @@ async function loadHistory() {
 	// Render the strip
 	renderBadges(nowUnlocked, totalNet);
 
+	// Chart Y axis control function
+	function globalHistoricalMax() {
+		try {
+			// Load your existing daily_totals dataset
+			const dataPath = path.join(__dirname, "..", "data", "daily_totals.json");
+			if (!fs.existsSync(dataPath)) return 1000; // default base max
+
+			const raw = JSON.parse(fs.readFileSync(dataPath, "utf8"));
+			let maxEdits = 0;
+			for (const row of raw) {
+				const adds = Number(row.added) || 0;
+				const removes = Number(row.removed) || 0;
+				const total = adds + removes;
+				if (total > maxEdits) maxEdits = total;
+			}
+			// Add a 10% buffer for visibility
+			return Math.ceil(maxEdits * 1.1);
+		} catch (e) {
+			console.warn("Could not calculate historical max:", e);
+			return 1000;
+		}
+	}
+
 	const ctx = document.getElementById("historyChart").getContext("2d");
 
 	const chart = new Chart(ctx, {
@@ -279,24 +302,43 @@ async function loadHistory() {
 					max: new Date(rows[rows.length - 1].date).getTime(),
 					title: { display: true, text: "Date", color: "#ccc" },
 					ticks: { color: "#aaa", maxRotation: 0, autoSkip: true },
+					grid: { color: "rgba(251, 255, 255, 0.47)" },
 				},
 
 				y: {
-					title: { display: true, text: "Edits", color: "#ccc" },
+					title: { display: true, text: "Lines of Code", color: "#ccc" },
 					ticks: { color: "#aaa" },
+					beginAtZero: true,
+					grid: { color: "rgba(251, 255, 255, 0.47)" },
+					min: 0,
+					suggestedMax: globalHistoricalMax(), // ⬅ custom function
 				},
 			},
 			plugins: {
 				legend: { labels: { color: "#ddd", font: { size: 13 } } },
 				tooltip: {
+					enabled: true,
+					mode: "nearest", // show only one dataset point (closest to cursor)
+					intersect: false, // trigger even if not exactly on the line
+					backgroundColor: "#1b2b1d",
+					borderColor: "#0f0",
+					borderWidth: 1,
+					titleColor: "#fff",
+					bodyColor: "#aaffaa",
+					padding: 8,
 					callbacks: {
-						// Show original ISO date in tooltip header
+						// Tooltip title: show the date from the x-axis
 						title: (items) => {
 							const x = Math.round(items[0].parsed.x);
 							return dates[x] ?? "";
 						},
+						// Tooltip body: show dataset label and value
+						label: (ctx) => {
+							return `${ctx.dataset.label}: ${ctx.formattedValue}`;
+						},
 					},
 				},
+
 				zoom: {
 					pan: {
 						enabled: true,
