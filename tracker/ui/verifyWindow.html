@@ -58,6 +58,22 @@
             display: flex;
             gap: 10px;
         }
+
+        .open-dash-btn {
+            margin-top: 20px;
+            padding: 10px 18px;
+            font-size: 15px;
+            border-radius: 8px;
+            border: none;
+            background: #1e9c4b;
+            color: #fff;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .open-dash-btn:hover {
+            background: #28b05e;
+        }
     </style>
 </head>
 
@@ -73,7 +89,11 @@
     <div class="btn-row">
         <button id="viewLogBtn">View Log</button>
         <button id="retryBtn">Retry Now</button>
+
     </div>
+    <button id="openDashboardBtn" class="open-dash-btn">
+        🔁 Open Git-Tracker Dashboard
+    </button>
 
     <!-- ===================================== -->
     <!-- Auto Log Viewer (added for Step 7.5) -->

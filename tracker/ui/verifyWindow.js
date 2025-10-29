@@ -1,5 +1,8 @@
 // tracker/verifyWindow.js
 const { ipcRenderer, shell } = require("electron");
+const { exec } = require("child_process");
+const path = require("path");
+
 require("../electron/modules/signatureBanner");
 
 // Listen for health data from the main process
@@ -42,4 +45,17 @@ ipcRenderer.on("show-log", (_, content) => {
 	} else {
 		logBox.innerHTML = "<i>⚠️ No log file found for today.</i>";
 	}
+});
+document.getElementById("openDashboardBtn").addEventListener("click", () => {
+	const vbsPath = path.join(__dirname, "..", "..", "LaunchDashboard.vbs");
+
+	exec(`wscript.exe "${vbsPath}"`, (err) => {
+		if (err) {
+			console.error("❌ Failed to launch dashboard:", err.message);
+			alert("Failed to launch dashboard. Please check LaunchDashboard.vbs.");
+		} else {
+			console.log("✅ Dashboard launched successfully.");
+			window.close(); // optional: close verify window after opening dashboard
+		}
+	});
 });

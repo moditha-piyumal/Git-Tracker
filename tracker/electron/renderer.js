@@ -578,6 +578,14 @@ async function renderRepoWeekChart() {
 
 	const { labels, values, startDate, endDate } = res;
 
+	// 🧹 Filter out repos with zero edits
+	const filteredData = labels
+		.map((label, i) => ({ label, value: values[i] }))
+		.filter((item) => item.value > 0);
+
+	const filteredLabels = filteredData.map((d) => d.label);
+	const filteredValues = filteredData.map((d) => d.value);
+
 	// 2️⃣ Destroy old chart if it exists
 	if (repoWeekChart) {
 		repoWeekChart.destroy();
@@ -589,12 +597,12 @@ async function renderRepoWeekChart() {
 	repoWeekChart = new Chart(ctx, {
 		type: "doughnut",
 		data: {
-			labels,
+			labels: filteredLabels,
 			datasets: [
 				{
 					label: `Edits (${startDate} → ${endDate})`,
-					data: values,
-					backgroundColor: labels.map((name) => getColorForRepo(name)),
+					data: filteredValues,
+					backgroundColor: filteredLabels.map((name) => getColorForRepo(name)),
 					borderWidth: 1,
 				},
 			],
