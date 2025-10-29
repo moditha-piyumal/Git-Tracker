@@ -112,7 +112,7 @@ function checkTodayRecord() {
 // --- Electron window factory ---
 function createWindow(mode) {
 	const win = new BrowserWindow({
-		width: 750,
+		width: 850,
 		height: 650,
 		resizable: false,
 		title: "Git-Tracker Verification",
