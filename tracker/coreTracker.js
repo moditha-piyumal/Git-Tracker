@@ -131,6 +131,49 @@ function insertRun(
 		log.error("Failed to insert run record: " + err.message);
 	}
 }
+// 🧩 Helper: Fill ANY skipped days in daily_totals with 0 edits
+function fillMissingDays() {
+	// 1) Get *all* recorded dates, oldest → newest
+	const rows = db
+		.prepare(
+			"SELECT date_yyyy_mm_dd FROM daily_totals ORDER BY date_yyyy_mm_dd ASC"
+		)
+		.all();
+
+	if (!rows.length) return; // nothing yet, first ever run
+
+	// 2) Build a Set for quick lookup of existing dates
+	const existing = new Set(rows.map((r) => r.date_yyyy_mm_dd));
+
+	// 3) Figure out the range we care about: first date → today
+	const firstDateIso = rows[0].date_yyyy_mm_dd; // e.g. "2025-10-17"
+	const todayIso = new Date().toLocaleDateString("en-CA"); // "YYYY-MM-DD"
+
+	function isoToDate(iso) {
+		const [y, m, d] = iso.split("-").map(Number);
+		return new Date(y, m - 1, d);
+	}
+
+	let cursor = isoToDate(firstDateIso);
+
+	const insertTotal = db.prepare(`
+		INSERT OR IGNORE INTO daily_totals
+			(date_yyyy_mm_dd, insertions, deletions, edits, commits)
+		VALUES (?, 0, 0, 0, 0)
+	`);
+
+	// 4) Walk from first date up to *today*, filling any gaps
+	while (cursor.toLocaleDateString("en-CA") <= todayIso) {
+		const iso = cursor.toLocaleDateString("en-CA");
+
+		if (!existing.has(iso)) {
+			console.log("📅 Backfilling missing day with 0 edits:", iso);
+			insertTotal.run(iso);
+		}
+
+		cursor.setDate(cursor.getDate() + 1);
+	}
+}
 
 // ===========================
 // STEP 3 - PART 7: MAIN RUN
@@ -154,7 +197,12 @@ function runTrackerForToday() {
 		releaseLock();
 		process.exit(1);
 	}
+	//-----------------
 
+	// 🧩 Fill skipped days before scanning
+	fillMissingDays();
+
+	//-------------------------
 	// 3️⃣ Health freshness check (non-blocking)
 	const freshness = recentSuccess();
 	if (!freshness.ok) {
